@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DS Legacy — ambiente digital de aprendizagem.">
+  <title>DS Legacy | Sala de Estudos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" aria-label="DS Legacy - início">
+        <img src="images/1000043352.jpg" alt="Logo DS Legacy">
+        <span><strong>DS</strong> Legacy</span>
+      </a>
+
+      <nav class="menu" aria-label="Menu principal">
+        <p class="menu-label">MENU PRINCIPAL</p>
+        <a class="menu-item active" href="#inicio" data-section="inicio">
+          <span class="icon">⌂</span> Início
+        </a>
+        <a class="menu-item" href="#disciplinas" data-section="disciplinas">
+          <span class="icon">▤</span> Disciplinas
+        </a>
+        <a class="menu-item" href="#atividades" data-section="atividades">
+          <span class="icon">✓</span> Atividades
+          <span class="badge">3</span>
+        </a>
+        <a class="menu-item" href="#calendario" data-section="calendario">
+          <span class="icon">□</span> Calendário
+        </a>
+        <p class="menu-label second">MINHA CONTA</p>
+        <a class="menu-item" href="#desempenho" data-section="desempenho">
+          <span class="icon">↗</span> Desempenho
+        </a>
+        <a class="menu-item" href="#configuracoes" data-section="configuracoes">
+          <span class="icon">⚙</span> Configurações
+        </a>
+      </nav>
+
+      <div class="sidebar-help">
+        <div class="help-icon">?</div>
+        <strong>Precisa de ajuda?</strong>
+        <span>Fale com nossa equipe</span>
+        <button type="button" id="helpButton">Acessar suporte</button>
+      </div>
+      <button class="logout" type="button"><span>↪</span> Sair da conta</button>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Abrir menu" aria-expanded="false">☰</button>
+        <div class="search-box">
+          <span>⌕</span>
+          <input id="searchInput" type="search" placeholder="Buscar aulas, matérias..." aria-label="Buscar">
+        </div>
+        <div class="top-actions">
+          <button class="notification" id="notificationButton" aria-label="Notificações">♢<span></span></button>
+          <div class="profile">
+            <div class="avatar">LG</div>
+            <div><strong>Lucas Goncalves</strong><span>Estudante</span></div>
+            <button type="button" aria-label="Opções do perfil">⌄</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="content" id="inicio">
+        <div class="welcome">
+          <div>
+            <span class="eyebrow">SEXTA-FEIRA, 07 DE AGOSTO</span>
+            <h1>Olá, Lucas! <span>👋</span></h1>
+            <p>Continue avançando. Você está construindo um legado incrível!</p>
+          </div>
+          <button class="outline-button" id="calendarButton"><span>□</span> Ver calendário</button>
+        </div>
+
+        <div class="hero-card">
+          <div class="hero-content">
+            <span class="hero-tag">TRILHA EM DESTAQUE</span>
+            <h2>Desenvolvimento de Sistemas</h2>
+            <p>Aprenda na prática e prepare-se para transformar ideias em soluções digitais.</p>
+            <div class="hero-progress"><div><span>Seu progresso</span><strong>68%</strong></div><div class="progress"><i style="width:68%"></i></div></div>
+            <button class="primary-button" type="button">Continuar estudando <span>→</span></button>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <span class="code-mark">&lt;/&gt;</span>
+            <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat"><div class="stat-icon blue">▤</div><div><span>Aulas concluídas</span><strong>24</strong><small><b>+3</b> esta semana</small></div></article>
+          <article class="stat"><div class="stat-icon cyan">◷</div><div><span>Horas de estudo</span><strong>32h</strong><small><b>+5h</b> esta semana</small></div></article>
+          <article class="stat"><div class="stat-icon purple">☆</div><div><span>Pontuação</span><strong>1.850</strong><small><b>Top 10%</b> da turma</small></div></article>
+          <article class="stat"><div class="stat-icon green">✓</div><div><span>Atividades</span><strong>18/21</strong><small><em>3 pendentes</em></small></div></article>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="panel lessons-panel">
+            <div class="section-heading"><div><h2>Continue de onde parou</h2><p>Suas aulas recentes</p></div><a href="#disciplinas">Ver todas →</a></div>
+            <div class="lesson-list" id="lessonList">
+              <article class="lesson" data-title="lógica de programação algoritmos">
+                <div class="lesson-thumb html-icon">&lt;/&gt;<span>ALGORITMOS</span></div>
+                <div class="lesson-info"><span class="subject">LÓGICA DE PROGRAMAÇÃO</span><h3>Estruturas de repetição</h3><p>Aula 08 • 24 min</p><div class="progress thin"><i style="width:72%"></i></div></div>
+                <button class="play" type="button" aria-label="Continuar Estruturas de repetição">▶</button>
+              </article>
+              <article class="lesson" data-title="banco de dados modelagem mysql">
+                <div class="lesson-thumb db-icon">◉<span>BANCO DE DADOS</span></div>
+                <div class="lesson-info"><span class="subject">BANCO DE DADOS</span><h3>Modelagem de dados</h3><p>Aula 05 • 32 min</p><div class="progress thin"><i style="width:45%"></i></div></div>
+                <button class="play" type="button" aria-label="Continuar Modelagem de dados">▶</button>
+              </article>
+              <article class="lesson" data-title="desenvolvimento web css flexbox">
+                <div class="lesson-thumb css-icon">#<span>CSS & LAYOUT</span></div>
+                <div class="lesson-info"><span class="subject">DESENVOLVIMENTO WEB</span><h3>Flexbox na prática</h3><p>Aula 12 • 18 min</p><div class="progress thin"><i style="width:18%"></i></div></div>
+                <button class="play" type="button" aria-label="Continuar Flexbox na prática">▶</button>
+              </article>
+              <p class="empty-state" id="emptyState">Nenhuma aula encontrada.</p>
+            </div>
+          </section>
+
+          <aside class="right-column">
+            <section class="panel deadlines">
+              <div class="section-heading"><div><h2>Próximos prazos</h2><p>Não deixe para depois</p></div><button aria-label="Mais opções">•••</button></div>
+              <div class="deadline"><div class="date"><b>10</b><span>AGO</span></div><div><h3>Lista de exercícios</h3><p>Lógica de Programação</p></div><span class="deadline-tag urgent">3 dias</span></div>
+              <div class="deadline"><div class="date"><b>14</b><span>AGO</span></div><div><h3>Projeto de interface</h3><p>Desenvolvimento Web</p></div><span class="deadline-tag">7 dias</span></div>
+              <div class="deadline"><div class="date"><b>18</b><span>AGO</span></div><div><h3>Modelagem MER</h3><p>Banco de Dados</p></div><span class="deadline-tag">11 dias</span></div>
+              <a class="all-activities" href="#atividades">Ver todas as atividades →</a>
+            </section>
+            <section class="quote-card">
+              <span class="quote-mark">“</span>
+              <p>O sucesso é a soma de pequenos esforços repetidos dia após dia.</p>
+              <span>— Robert Collier</span>
+              <div class="dots"><i></i><i></i><i></i></div>
+            </section>
+          </aside>
+        </div>
+      </section>
+      <footer><span>© 2026 DS Legacy</span><span>Desenvolvimento de Sistemas • Construindo o futuro</span></footer>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="interacao.js"></script>
+</body>
+</html>
