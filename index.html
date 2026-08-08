@@ -3,145 +3,173 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="DS Legacy — ambiente digital de aprendizagem.">
-  <title>DS Legacy | Sala de Estudos</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="description" content="DS Legacy - sistema de acompanhamento disciplinar escolar.">
+  <title>DS Legacy | Gestão Escolar</title>
   <link rel="stylesheet" href="estilo.css">
+  <link rel="stylesheet" href="biblioteca.css">
+  <link rel="stylesheet" href="apresentacao.css">
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar" id="sidebar">
-      <a class="brand" href="#" aria-label="DS Legacy - início">
-        <img src="images/1000043352.jpg" alt="Logo DS Legacy">
-        <span><strong>DS</strong> Legacy</span>
-      </a>
+  <section class="login-page" id="loginPage">
+    <div class="login-info">
+      <img src="images/1000043352.jpg" alt="Logo DS Legacy">
+      <h1>DS Legacy</h1>
+      <p>Acompanhamento disciplinar simples e seguro para professores e diretores.</p>
+    </div>
 
-      <nav class="menu" aria-label="Menu principal">
-        <p class="menu-label">MENU PRINCIPAL</p>
-        <a class="menu-item active" href="#inicio" data-section="inicio">
-          <span class="icon">⌂</span> Início
-        </a>
-        <a class="menu-item" href="#disciplinas" data-section="disciplinas">
-          <span class="icon">▤</span> Disciplinas
-        </a>
-        <a class="menu-item" href="#atividades" data-section="atividades">
-          <span class="icon">✓</span> Atividades
-          <span class="badge">3</span>
-        </a>
-        <a class="menu-item" href="#calendario" data-section="calendario">
-          <span class="icon">□</span> Calendário
-        </a>
-        <p class="menu-label second">MINHA CONTA</p>
-        <a class="menu-item" href="#desempenho" data-section="desempenho">
-          <span class="icon">↗</span> Desempenho
-        </a>
-        <a class="menu-item" href="#configuracoes" data-section="configuracoes">
-          <span class="icon">⚙</span> Configurações
-        </a>
+    <form class="login-card" id="loginForm">
+      <h2>Entrar no sistema</h2>
+      <p>Utilize uma conta autorizada pela escola.</p>
+
+      <label for="usuario">Usuário</label>
+      <input id="usuario" name="usuario" type="text" autocomplete="username" required>
+
+      <label for="senha">Senha</label>
+      <div class="password-box">
+        <input id="senha" name="senha" type="password" autocomplete="current-password" required>
+        <button type="button" id="showPassword" aria-label="Mostrar senha">👁</button>
+      </div>
+
+      <p class="login-error" id="loginError" role="alert"></p>
+      <button class="main-button" type="submit">Acessar</button>
+
+      <div class="test-accounts">
+        <strong>Contas para teste</strong>
+        <span>Professor: testeprofessor / Professor@123</span>
+        <span>Diretor: testediretor / Diretor@123</span>
+      </div>
+    </form>
+  </section>
+
+  <div class="system hidden" id="system">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <img src="images/1000043352.jpg" alt="Logo DS Legacy">
+        <span><b>DS</b> Legacy</span>
+      </div>
+
+      <nav>
+        <button class="nav-item active" data-page="dashboard">▦ <span>Painel principal</span></button>
+        <button class="nav-item" data-page="alunos">♙ <span>Alunos</span></button>
+        <button class="nav-item" data-page="ocorrencias">⚠ <span>Ocorrências</span></button>
+        <button class="nav-item" data-page="biblioteca">▥ <span>Biblioteca</span></button>
+        <button class="nav-item director-only" data-page="relatorios">▤ <span>Relatórios</span></button>
       </nav>
 
-      <div class="sidebar-help">
-        <div class="help-icon">?</div>
-        <strong>Precisa de ajuda?</strong>
-        <span>Fale com nossa equipe</span>
-        <button type="button" id="helpButton">Acessar suporte</button>
+      <div class="logged-user">
+        <div class="user-circle" id="userInitial">U</div>
+        <div><strong id="userName">Usuário</strong><span id="userRole">Perfil</span></div>
       </div>
-      <button class="logout" type="button"><span>↪</span> Sair da conta</button>
+      <button class="logout" id="logoutButton">↪ Sair</button>
     </aside>
 
-    <main class="main">
+    <main class="main-content">
       <header class="topbar">
-        <button class="mobile-menu" id="mobileMenu" aria-label="Abrir menu" aria-expanded="false">☰</button>
-        <div class="search-box">
-          <span>⌕</span>
-          <input id="searchInput" type="search" placeholder="Buscar aulas, matérias..." aria-label="Buscar">
-        </div>
-        <div class="top-actions">
-          <button class="notification" id="notificationButton" aria-label="Notificações">♢<span></span></button>
-          <div class="profile">
-            <div class="avatar">LG</div>
-            <div><strong>Lucas Goncalves</strong><span>Estudante</span></div>
-            <button type="button" aria-label="Opções do perfil">⌄</button>
-          </div>
-        </div>
+        <button class="menu-mobile" id="menuMobile">☰</button>
+        <div><h1 id="pageTitle">Painel principal</h1><p id="todayText"></p></div>
+        <button class="notice-button" id="noticeButton">🔔 <span id="noticeCount">0</span></button>
       </header>
 
-      <section class="content" id="inicio">
-        <div class="welcome">
-          <div>
-            <span class="eyebrow">SEXTA-FEIRA, 07 DE AGOSTO</span>
-            <h1>Olá, Lucas! <span>👋</span></h1>
-            <p>Continue avançando. Você está construindo um legado incrível!</p>
-          </div>
-          <button class="outline-button" id="calendarButton"><span>□</span> Ver calendário</button>
+      <section class="page active" id="dashboard">
+        <div class="welcome-card">
+          <div><span id="roleWelcome">ÁREA DO PROFESSOR</span><h2>Bem-vindo ao DS Legacy</h2><p>Acompanhe ocorrências e ajude a equipe escolar nas tomadas de decisão.</p></div>
+          <button class="white-button open-occurrence">+ Nova ocorrência</button>
         </div>
 
-        <div class="hero-card">
-          <div class="hero-content">
-            <span class="hero-tag">TRILHA EM DESTAQUE</span>
-            <h2>Desenvolvimento de Sistemas</h2>
-            <p>Aprenda na prática e prepare-se para transformar ideias em soluções digitais.</p>
-            <div class="hero-progress"><div><span>Seu progresso</span><strong>68%</strong></div><div class="progress"><i style="width:68%"></i></div></div>
-            <button class="primary-button" type="button">Continuar estudando <span>→</span></button>
-          </div>
-          <div class="hero-art" aria-hidden="true">
-            <span class="code-mark">&lt;/&gt;</span>
-            <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
-          </div>
+        <div class="cards">
+          <article><div class="card-icon blue">♙</div><div><span>Alunos cadastrados</span><strong id="studentTotal">0</strong></div></article>
+          <article><div class="card-icon orange">⚠</div><div><span>Ocorrências registradas</span><strong id="occurrenceTotal">0</strong></div></article>
+          <article><div class="card-icon red">!</div><div><span>Alertas ativos</span><strong id="alertTotal">0</strong></div></article>
+          <article><div class="card-icon green">✓</div><div><span>Registros neste mês</span><strong id="monthTotal">0</strong></div></article>
         </div>
 
-        <div class="stats-grid">
-          <article class="stat"><div class="stat-icon blue">▤</div><div><span>Aulas concluídas</span><strong>24</strong><small><b>+3</b> esta semana</small></div></article>
-          <article class="stat"><div class="stat-icon cyan">◷</div><div><span>Horas de estudo</span><strong>32h</strong><small><b>+5h</b> esta semana</small></div></article>
-          <article class="stat"><div class="stat-icon purple">☆</div><div><span>Pontuação</span><strong>1.850</strong><small><b>Top 10%</b> da turma</small></div></article>
-          <article class="stat"><div class="stat-icon green">✓</div><div><span>Atividades</span><strong>18/21</strong><small><em>3 pendentes</em></small></div></article>
-        </div>
-
-        <div class="dashboard-grid">
-          <section class="panel lessons-panel">
-            <div class="section-heading"><div><h2>Continue de onde parou</h2><p>Suas aulas recentes</p></div><a href="#disciplinas">Ver todas →</a></div>
-            <div class="lesson-list" id="lessonList">
-              <article class="lesson" data-title="lógica de programação algoritmos">
-                <div class="lesson-thumb html-icon">&lt;/&gt;<span>ALGORITMOS</span></div>
-                <div class="lesson-info"><span class="subject">LÓGICA DE PROGRAMAÇÃO</span><h3>Estruturas de repetição</h3><p>Aula 08 • 24 min</p><div class="progress thin"><i style="width:72%"></i></div></div>
-                <button class="play" type="button" aria-label="Continuar Estruturas de repetição">▶</button>
-              </article>
-              <article class="lesson" data-title="banco de dados modelagem mysql">
-                <div class="lesson-thumb db-icon">◉<span>BANCO DE DADOS</span></div>
-                <div class="lesson-info"><span class="subject">BANCO DE DADOS</span><h3>Modelagem de dados</h3><p>Aula 05 • 32 min</p><div class="progress thin"><i style="width:45%"></i></div></div>
-                <button class="play" type="button" aria-label="Continuar Modelagem de dados">▶</button>
-              </article>
-              <article class="lesson" data-title="desenvolvimento web css flexbox">
-                <div class="lesson-thumb css-icon">#<span>CSS & LAYOUT</span></div>
-                <div class="lesson-info"><span class="subject">DESENVOLVIMENTO WEB</span><h3>Flexbox na prática</h3><p>Aula 12 • 18 min</p><div class="progress thin"><i style="width:18%"></i></div></div>
-                <button class="play" type="button" aria-label="Continuar Flexbox na prática">▶</button>
-              </article>
-              <p class="empty-state" id="emptyState">Nenhuma aula encontrada.</p>
-            </div>
+        <div class="dashboard-columns">
+          <section class="box">
+            <div class="box-title"><div><h2>Alunos em acompanhamento</h2><p>O alerta é ativado ao chegar em 5 ocorrências.</p></div><button class="link-button" data-go="alunos">Ver alunos</button></div>
+            <div class="empty" id="monitoringEmpty"><b>Nenhum aluno em acompanhamento</b><span>Cadastre um aluno e registre ocorrências para começar.</span></div>
+            <div class="student-list" id="monitoringList"></div>
           </section>
 
-          <aside class="right-column">
-            <section class="panel deadlines">
-              <div class="section-heading"><div><h2>Próximos prazos</h2><p>Não deixe para depois</p></div><button aria-label="Mais opções">•••</button></div>
-              <div class="deadline"><div class="date"><b>10</b><span>AGO</span></div><div><h3>Lista de exercícios</h3><p>Lógica de Programação</p></div><span class="deadline-tag urgent">3 dias</span></div>
-              <div class="deadline"><div class="date"><b>14</b><span>AGO</span></div><div><h3>Projeto de interface</h3><p>Desenvolvimento Web</p></div><span class="deadline-tag">7 dias</span></div>
-              <div class="deadline"><div class="date"><b>18</b><span>AGO</span></div><div><h3>Modelagem MER</h3><p>Banco de Dados</p></div><span class="deadline-tag">11 dias</span></div>
-              <a class="all-activities" href="#atividades">Ver todas as atividades →</a>
-            </section>
-            <section class="quote-card">
-              <span class="quote-mark">“</span>
-              <p>O sucesso é a soma de pequenos esforços repetidos dia após dia.</p>
-              <span>— Robert Collier</span>
-              <div class="dots"><i></i><i></i><i></i></div>
-            </section>
-          </aside>
+          <section class="box">
+            <div class="box-title"><div><h2>Ocorrências recentes</h2><p>Últimos registros realizados.</p></div></div>
+            <div class="empty" id="recentEmpty"><b>Nenhuma ocorrência registrada</b><span>Os novos registros aparecerão aqui.</span></div>
+            <div id="recentList"></div>
+          </section>
         </div>
       </section>
-      <footer><span>© 2026 DS Legacy</span><span>Desenvolvimento de Sistemas • Construindo o futuro</span></footer>
+
+      <section class="page" id="alunos">
+        <div class="page-actions"><div><h2>Alunos cadastrados</h2><p>Cadastre apenas alunos que realmente serão acompanhados.</p></div><button class="main-button" id="openStudent">+ Cadastrar aluno</button></div>
+        <div class="box table-box">
+          <input class="search" id="studentSearch" type="search" placeholder="Pesquisar por nome ou turma...">
+          <div class="empty" id="studentsEmpty"><b>Nenhum aluno cadastrado</b><span>Use o botão acima para realizar o primeiro cadastro.</span></div>
+          <div class="table-scroll"><table id="studentsTable"><thead><tr><th>Nome</th><th>Turma</th><th>Ocorrências</th><th>Situação</th><th>Ação</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <section class="page" id="ocorrencias">
+        <div class="page-actions"><div><h2>Histórico de ocorrências</h2><p>Consulte os registros disciplinares.</p></div><button class="main-button open-occurrence">+ Nova ocorrência</button></div>
+        <div class="box"><div class="empty" id="occurrencesEmpty"><b>Nenhuma ocorrência registrada</b><span>Cadastre um aluno antes de criar uma ocorrência.</span></div><div class="table-scroll"><table id="occurrencesTable"><thead><tr><th>Data</th><th>Aluno</th><th>Tipo</th><th>Responsável</th><th>Descrição</th></tr></thead><tbody></tbody></table></div></div>
+      </section>
+
+      <section class="page" id="biblioteca">
+        <div class="page-actions"><div><h2>Inventário da biblioteca</h2><p>Controle dos livros e materiais da escola.</p></div><button class="main-button" id="openLibraryItem">+ Cadastrar item</button></div>
+        <div class="library-cards">
+          <article><span>Títulos cadastrados</span><strong id="libraryTitles">0</strong></article>
+          <article><span>Total de exemplares</span><strong id="libraryCopies">0</strong></article>
+          <article><span>Disponíveis</span><strong id="libraryAvailable">0</strong></article>
+          <article class="attention"><span>Estoque baixo</span><strong id="libraryLow">0</strong></article>
+        </div>
+        <div class="box table-box">
+          <div class="library-tools"><input class="search" id="librarySearch" type="search" placeholder="Pesquisar título, autor ou código..."><select id="libraryCategoryFilter"><option value="">Todas as categorias</option><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Revista</option><option>Outro</option></select></div>
+          <div class="empty" id="libraryEmpty"><b>Nenhum item cadastrado</b><span>Cadastre o primeiro livro ou material da biblioteca.</span></div>
+          <div class="table-scroll"><table id="libraryTable"><thead><tr><th>Código</th><th>Título</th><th>Autor</th><th>Categoria</th><th>Quantidade</th><th>Disponíveis</th><th>Estado</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <section class="page" id="relatorios">
+        <div class="page-actions"><div><h2>Relatórios</h2><p>Visão geral disponível para a direção.</p></div><button class="main-button" id="printReport">Imprimir relatório</button></div>
+        <div class="box report"><h3>Resumo disciplinar</h3><p id="reportSummary">Nenhum dado disponível para gerar o relatório.</p><div id="reportList"></div></div>
+      </section>
     </main>
   </div>
+
+  <dialog id="studentDialog">
+    <form method="dialog" id="studentForm">
+      <div class="modal-title"><h2>Cadastrar aluno</h2><button value="cancel" aria-label="Fechar">×</button></div>
+      <label for="studentName">Nome completo</label>
+      <input id="studentName" required>
+      <label for="studentClass">Turma</label>
+      <input id="studentClass" placeholder="Ex.: 3º A" required>
+      <div class="modal-actions"><button value="cancel" class="cancel-button">Cancelar</button><button value="default" class="main-button" id="saveStudent">Salvar aluno</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="occurrenceDialog">
+    <form method="dialog" id="occurrenceForm">
+      <div class="modal-title"><h2>Nova ocorrência</h2><button value="cancel" aria-label="Fechar">×</button></div>
+      <label for="occurrenceStudent">Aluno</label>
+      <select id="occurrenceStudent" required><option value="">Selecione um aluno</option></select>
+      <label for="occurrenceType">Tipo</label>
+      <select id="occurrenceType" required><option>Comportamento inadequado</option><option>Desrespeito</option><option>Atraso</option><option>Falta sem justificativa</option><option>Suspensão</option><option>Outro</option></select>
+      <label for="occurrenceDescription">Descrição</label>
+      <textarea id="occurrenceDescription" rows="4" required></textarea>
+      <div class="modal-actions"><button value="cancel" class="cancel-button">Cancelar</button><button value="default" class="main-button" id="saveOccurrence">Registrar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="libraryDialog">
+    <form method="dialog" id="libraryForm">
+      <div class="modal-title"><h2>Cadastrar item da biblioteca</h2><button value="cancel" aria-label="Fechar">×</button></div>
+      <div class="form-grid"><div><label for="bookCode">Código</label><input id="bookCode" placeholder="Ex.: LIV-001" required></div><div><label for="bookCategory">Categoria</label><select id="bookCategory" required><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Revista</option><option>Outro</option></select></div></div>
+      <label for="bookTitle">Título ou nome do material</label><input id="bookTitle" required>
+      <label for="bookAuthor">Autor ou responsável</label><input id="bookAuthor" placeholder="Use Não informado quando não houver" required>
+      <div class="form-grid"><div><label for="bookQuantity">Quantidade</label><input id="bookQuantity" type="number" min="1" value="1" required></div><div><label for="bookAvailable">Disponíveis</label><input id="bookAvailable" type="number" min="0" value="1" required></div></div>
+      <label for="bookCondition">Estado de conservação</label><select id="bookCondition"><option>Bom</option><option>Regular</option><option>Danificado</option></select>
+      <div class="modal-actions"><button value="cancel" class="cancel-button">Cancelar</button><button value="default" class="main-button" id="saveLibraryItem">Salvar item</button></div>
+    </form>
+  </dialog>
+
   <div class="toast" id="toast" role="status"></div>
   <script src="interacao.js"></script>
 </body>

@@ -1,0 +1,352 @@
+/* Tema usado na apresentação do DS Legacy */
+:root {
+  --azul: #2563eb;
+  --azul-escuro: #123b83;
+  --azul-claro: #eff6ff;
+  --fundo: #f4f7fb;
+  --texto: #172033;
+  --cinza: #6f7c91;
+  --borda: #e2e8f0;
+  --vermelho: #dc3545;
+  --sombra: 0 8px 25px rgba(38, 56, 88, 0.08);
+}
+
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: var(--fundo);
+}
+
+button,
+input,
+select,
+textarea {
+  transition: 0.2s;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+/* Tela de entrada */
+.login-page {
+  background: white;
+}
+
+.login-info {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(140deg, #0b3478, #1767d8 70%, #3186ed);
+}
+
+.login-info::before,
+.login-info::after {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+}
+
+.login-info::before {
+  top: -130px;
+  left: -100px;
+}
+
+.login-info::after {
+  right: -100px;
+  bottom: -150px;
+}
+
+.login-info img,
+.login-info h1,
+.login-info p {
+  position: relative;
+  z-index: 1;
+}
+
+.login-info img {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+}
+
+.login-card {
+  padding: 38px;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 16px 50px rgba(37, 55, 85, 0.14);
+}
+
+.login-card h2 {
+  font-size: 24px;
+}
+
+.login-card input,
+dialog input,
+dialog select,
+dialog textarea {
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.login-card input:focus,
+dialog input:focus,
+dialog select:focus,
+dialog textarea:focus {
+  background: white;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.password-box {
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.main-button {
+  border-radius: 8px;
+  box-shadow: 0 5px 12px rgba(37, 99, 235, 0.2);
+}
+
+.main-button:hover {
+  background: #1554d1;
+  box-shadow: 0 7px 16px rgba(37, 99, 235, 0.3);
+}
+
+/* Navegação */
+.sidebar {
+  border: none;
+  box-shadow: 3px 0 20px rgba(38, 56, 88, 0.06);
+}
+
+.brand {
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.brand img {
+  border-radius: 11px;
+  box-shadow: 0 5px 12px rgba(19, 58, 126, 0.18);
+}
+
+.nav-item {
+  border-radius: 9px;
+  font-weight: 500;
+}
+
+.nav-item:hover {
+  transform: translateX(3px);
+}
+
+.nav-item.active {
+  box-shadow: inset 3px 0 var(--azul);
+}
+
+.user-circle {
+  background: linear-gradient(135deg, var(--azul), var(--azul-escuro));
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.22);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  box-shadow: 0 3px 15px rgba(38, 56, 88, 0.04);
+}
+
+.notice-button {
+  border-radius: 9px;
+}
+
+/* Conteúdo principal */
+.page {
+  max-width: 1500px;
+  margin: auto;
+}
+
+.welcome-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 145px;
+  background: linear-gradient(110deg, #103b82, #1767d8);
+  border-radius: 14px;
+  box-shadow: 0 14px 30px rgba(22, 90, 190, 0.18);
+}
+
+.welcome-card::after {
+  content: "</>";
+  position: absolute;
+  right: 5%;
+  color: rgba(255, 255, 255, 0.08);
+  font-size: 80px;
+  font-weight: bold;
+}
+
+.welcome-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.white-button {
+  border-radius: 8px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+}
+
+.cards article,
+.box,
+.library-cards article {
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 12px;
+  box-shadow: var(--sombra);
+}
+
+.cards article:hover,
+.library-cards article:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(38, 56, 88, 0.12);
+}
+
+.cards article,
+.library-cards article {
+  transition: 0.25s;
+}
+
+.card-icon {
+  border-radius: 10px;
+}
+
+.box {
+  padding: 23px;
+}
+
+.box-title h2,
+.page-actions h2 {
+  font-size: 16px;
+}
+
+.empty {
+  margin-top: 14px;
+  border: 1px dashed #cdd7e5;
+  border-radius: 10px;
+  background: #fafcff;
+}
+
+.search,
+.library-tools select {
+  border-radius: 8px !important;
+  background: #f9fbfd !important;
+}
+
+.search:focus,
+.library-tools select:focus {
+  outline: none;
+  border-color: var(--azul);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+table {
+  border-spacing: 0;
+}
+
+th {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  background: #f5f8fc;
+  color: #59677d;
+}
+
+tbody tr:hover {
+  background: #f8fbff;
+}
+
+.status,
+.deadline-tag {
+  border-radius: 20px;
+}
+
+.small-button {
+  border-radius: 6px;
+}
+
+.small-button:hover {
+  border-color: var(--azul);
+  background: var(--azul-claro);
+}
+
+.library-cards .attention {
+  border-left: 4px solid #e49a2a;
+}
+
+.low-stock {
+  padding: 3px 7px;
+  border-radius: 12px;
+  background: #ffe9eb;
+}
+
+/* Janelas de cadastro */
+dialog {
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(20, 32, 51, 0.25);
+}
+
+dialog::backdrop {
+  background: rgba(15, 27, 45, 0.65);
+  backdrop-filter: blur(3px);
+}
+
+.modal-title {
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--borda);
+}
+
+.cancel-button {
+  border-radius: 8px;
+}
+
+.toast {
+  border-radius: 9px;
+  box-shadow: 0 10px 30px rgba(20, 32, 51, 0.22);
+  transition: 0.3s;
+  transform: translateY(15px);
+}
+
+.toast.show {
+  transform: translateY(0);
+}
+
+@media (max-width: 650px) {
+  .login-info {
+    min-height: 220px;
+  }
+
+  .login-card {
+    padding: 28px;
+  }
+
+  .welcome-card::after {
+    display: none;
+  }
+
+  .sidebar {
+    box-shadow: 8px 0 25px rgba(30, 45, 70, 0.18);
+  }
+}
+
+@media print {
+  .sidebar,
+  .topbar,
+  .page-actions button {
+    display: none !important;
+  }
+
+  .main-content {
+    width: 100%;
+    margin: 0;
+  }
+
+  .page {
+    display: none !important;
+  }
+
+  #relatorios.active {
+    display: block !important;
+  }
+}

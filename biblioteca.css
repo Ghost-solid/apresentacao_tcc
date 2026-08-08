@@ -1,0 +1,80 @@
+/* Estilos simples da parte da biblioteca */
+.library-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.library-cards article {
+  padding: 17px;
+  background: white;
+  border: 1px solid var(--borda);
+  border-radius: 7px;
+  display: flex;
+  flex-direction: column;
+}
+
+.library-cards span {
+  color: var(--cinza);
+  font-size: 10px;
+  margin-bottom: 7px;
+}
+
+.library-cards strong {
+  font-size: 22px;
+}
+
+.library-cards .attention {
+  border-left: 4px solid #d88a20;
+}
+
+.library-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.library-tools .search {
+  margin: 0;
+}
+
+.library-tools select {
+  padding: 9px;
+  border: 1px solid var(--borda);
+  border-radius: 5px;
+  background: white;
+  color: var(--texto);
+}
+
+.low-stock {
+  color: var(--vermelho);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .library-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  .library-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .library-tools {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
