@@ -1,12 +1,12 @@
 /* Estilos simples da parte da biblioteca */
-.library-cards {
+.cartoes-biblioteca {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
   margin-bottom: 18px;
 }
 
-.library-cards article {
+.cartoes-biblioteca article {
   padding: 17px;
   background: white;
   border: 1px solid var(--borda);
@@ -15,32 +15,32 @@
   flex-direction: column;
 }
 
-.library-cards span {
+.cartoes-biblioteca span {
   color: var(--cinza);
   font-size: 10px;
   margin-bottom: 7px;
 }
 
-.library-cards strong {
+.cartoes-biblioteca strong {
   font-size: 22px;
 }
 
-.library-cards .attention {
+.cartoes-biblioteca .atencao {
   border-left: 4px solid #d88a20;
 }
 
-.library-tools {
+.ferramentas-biblioteca {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 15px;
 }
 
-.library-tools .search {
+.ferramentas-biblioteca .pesquisa {
   margin: 0;
 }
 
-.library-tools select {
+.ferramentas-biblioteca select {
   padding: 9px;
   border: 1px solid var(--borda);
   border-radius: 5px;
@@ -48,33 +48,35 @@
   color: var(--texto);
 }
 
-.low-stock {
+.estoque-baixo {
   color: var(--vermelho);
 }
 
-.form-grid {
+.grade-formulario {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
 @media (max-width: 900px) {
-  .library-cards {
+  .cartoes-biblioteca {
     grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 650px) {
-  .library-cards {
+  .cartoes-biblioteca {
     grid-template-columns: 1fr;
   }
 
-  .library-tools {
+  .ferramentas-biblioteca {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .form-grid {
+  .grade-formulario {
     grid-template-columns: 1fr;
   }
 }
+
+

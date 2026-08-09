@@ -10,14 +10,14 @@
   <link rel="stylesheet" href="apresentacao.css">
 </head>
 <body>
-  <section class="login-page" id="loginPage">
-    <div class="login-info">
+  <section class="pagina-login" id="paginaLogin">
+    <div class="informacoes-login">
       <img src="images/1000043352.jpg" alt="Logo DS Legacy">
       <h1>DS Legacy</h1>
       <p>Acompanhamento disciplinar simples e seguro para professores e diretores.</p>
     </div>
 
-    <form class="login-card" id="loginForm">
+    <form class="cartao-login" id="formularioLogin">
       <h2>Entrar no sistema</h2>
       <p>Utilize uma conta autorizada pela escola.</p>
 
@@ -25,15 +25,15 @@
       <input id="usuario" name="usuario" type="text" autocomplete="username" required>
 
       <label for="senha">Senha</label>
-      <div class="password-box">
+      <div class="caixa-senha">
         <input id="senha" name="senha" type="password" autocomplete="current-password" required>
-        <button type="button" id="showPassword" aria-label="Mostrar senha">👁</button>
+        <button type="button" id="mostrarSenha" aria-label="Mostrar senha">👁</button>
       </div>
 
-      <p class="login-error" id="loginError" role="alert"></p>
-      <button class="main-button" type="submit">Acessar</button>
+      <p class="erro-login" id="erroLogin" role="alert"></p>
+      <button class="botao-principal" type="submit">Acessar</button>
 
-      <div class="test-accounts">
+      <div class="contas-teste">
         <strong>Contas para teste</strong>
         <span>Professor: testeprofessor / Professor@123</span>
         <span>Diretor: testediretor / Diretor@123</span>
@@ -41,136 +41,136 @@
     </form>
   </section>
 
-  <div class="system hidden" id="system">
-    <aside class="sidebar" id="sidebar">
-      <div class="brand">
+  <div class="sistema oculto" id="sistema">
+    <aside class="barra-lateral" id="barra-lateral">
+      <div class="marca">
         <img src="images/1000043352.jpg" alt="Logo DS Legacy">
         <span><b>DS</b> Legacy</span>
       </div>
 
       <nav>
-        <button class="nav-item active" data-page="dashboard">▦ <span>Painel principal</span></button>
-        <button class="nav-item" data-page="alunos">♙ <span>Alunos</span></button>
-        <button class="nav-item" data-page="ocorrencias">⚠ <span>Ocorrências</span></button>
-        <button class="nav-item" data-page="biblioteca">▥ <span>Biblioteca</span></button>
-        <button class="nav-item director-only" data-page="relatorios">▤ <span>Relatórios</span></button>
+        <button class="item-navegacao ativo" data-pagina="painel">▦ <span>Painel principal</span></button>
+        <button class="item-navegacao" data-pagina="alunos">♙ <span>Alunos</span></button>
+        <button class="item-navegacao" data-pagina="ocorrencias">⚠ <span>Ocorrências</span></button>
+        <button class="item-navegacao" data-pagina="biblioteca">▥ <span>Biblioteca</span></button>
+        <button class="item-navegacao somente-diretor" data-pagina="relatorios">▤ <span>Relatórios</span></button>
       </nav>
 
-      <div class="logged-user">
-        <div class="user-circle" id="userInitial">U</div>
-        <div><strong id="userName">Usuário</strong><span id="userRole">Perfil</span></div>
+      <div class="usuario-logado">
+        <div class="circulo-usuario" id="inicialUsuario">U</div>
+        <div><strong id="nomeUsuario">Usuário</strong><span id="perfilUsuario">Perfil</span></div>
       </div>
-      <button class="logout" id="logoutButton">↪ Sair</button>
+      <button class="sair" id="botaoSair">↪ Sair</button>
     </aside>
 
-    <main class="main-content">
-      <header class="topbar">
-        <button class="menu-mobile" id="menuMobile">☰</button>
-        <div><h1 id="pageTitle">Painel principal</h1><p id="todayText"></p></div>
-        <button class="notice-button" id="noticeButton">🔔 <span id="noticeCount">0</span></button>
+    <main class="conteudo-principal">
+      <header class="barra-superior">
+        <button class="menu-celular" id="menuCelular">☰</button>
+        <div><h1 id="tituloPagina">Painel principal</h1><p id="textoHoje"></p></div>
+        <button class="botao-notificacao" id="botaoNotificacao">🔔 <span id="quantidadeNotificacoes">0</span></button>
       </header>
 
-      <section class="page active" id="dashboard">
-        <div class="welcome-card">
-          <div><span id="roleWelcome">ÁREA DO PROFESSOR</span><h2>Bem-vindo ao DS Legacy</h2><p>Acompanhe ocorrências e ajude a equipe escolar nas tomadas de decisão.</p></div>
-          <button class="white-button open-occurrence">+ Nova ocorrência</button>
+      <section class="pagina ativo" id="painel">
+        <div class="cartao-boas-vindas">
+          <div><span id="saudacaoPerfil">ÁREA DO PROFESSOR</span><h2>Bem-vindo ao DS Legacy</h2><p>Tornando a escola um hambiente melhor para todos.</p></div>
+          <button class="botao-branco abrir-ocorrencia">+ Nova ocorrência</button>
         </div>
 
-        <div class="cards">
-          <article><div class="card-icon blue">♙</div><div><span>Alunos cadastrados</span><strong id="studentTotal">0</strong></div></article>
-          <article><div class="card-icon orange">⚠</div><div><span>Ocorrências registradas</span><strong id="occurrenceTotal">0</strong></div></article>
-          <article><div class="card-icon red">!</div><div><span>Alertas ativos</span><strong id="alertTotal">0</strong></div></article>
-          <article><div class="card-icon green">✓</div><div><span>Registros neste mês</span><strong id="monthTotal">0</strong></div></article>
+        <div class="cartoes">
+          <article><div class="icone-cartao azul">♙</div><div><span>Alunos cadastrados</span><strong id="totalAlunos">0</strong></div></article>
+          <article><div class="icone-cartao laranja">⚠</div><div><span>Ocorrências registradas</span><strong id="totalOcorrencias">0</strong></div></article>
+          <article><div class="icone-cartao vermelho">!</div><div><span>Alertas ativos</span><strong id="totalAlertas">0</strong></div></article>
+          <article><div class="icone-cartao verde">✓</div><div><span>Registros neste mês</span><strong id="totalMes">0</strong></div></article>
         </div>
 
-        <div class="dashboard-columns">
-          <section class="box">
-            <div class="box-title"><div><h2>Alunos em acompanhamento</h2><p>O alerta é ativado ao chegar em 5 ocorrências.</p></div><button class="link-button" data-go="alunos">Ver alunos</button></div>
-            <div class="empty" id="monitoringEmpty"><b>Nenhum aluno em acompanhamento</b><span>Cadastre um aluno e registre ocorrências para começar.</span></div>
-            <div class="student-list" id="monitoringList"></div>
+        <div class="colunas-painel">
+          <section class="caixa">
+            <div class="titulo-caixa"><div><h2>Alunos em acompanhamento</h2><p>O alerta é ativado ao chegar em 5 ocorrências.</p></div><button class="botao-link" data-go="alunos">Ver alunos</button></div>
+            <div class="vazio" id="acompanhamentoVazio"><b>Nenhum aluno em acompanhamento</b><span>Cadastre um aluno e registre ocorrências para começar.</span></div>
+            <div class="lista-alunos" id="listaAcompanhamento"></div>
           </section>
 
-          <section class="box">
-            <div class="box-title"><div><h2>Ocorrências recentes</h2><p>Últimos registros realizados.</p></div></div>
-            <div class="empty" id="recentEmpty"><b>Nenhuma ocorrência registrada</b><span>Os novos registros aparecerão aqui.</span></div>
-            <div id="recentList"></div>
+          <section class="caixa">
+            <div class="titulo-caixa"><div><h2>Ocorrências recentes</h2><p>Últimos registros realizados.</p></div></div>
+            <div class="vazio" id="recentesVazias"><b>Nenhuma ocorrência registrada</b><span>Os novos registros aparecerão aqui.</span></div>
+            <div id="listaRecentes"></div>
           </section>
         </div>
       </section>
 
-      <section class="page" id="alunos">
-        <div class="page-actions"><div><h2>Alunos cadastrados</h2><p>Cadastre apenas alunos que realmente serão acompanhados.</p></div><button class="main-button" id="openStudent">+ Cadastrar aluno</button></div>
-        <div class="box table-box">
-          <input class="search" id="studentSearch" type="search" placeholder="Pesquisar por nome ou turma...">
-          <div class="empty" id="studentsEmpty"><b>Nenhum aluno cadastrado</b><span>Use o botão acima para realizar o primeiro cadastro.</span></div>
-          <div class="table-scroll"><table id="studentsTable"><thead><tr><th>Nome</th><th>Turma</th><th>Ocorrências</th><th>Situação</th><th>Ação</th></tr></thead><tbody></tbody></table></div>
+      <section class="pagina" id="alunos">
+        <div class="acoes-pagina"><div><h2>Alunos cadastrados</h2><p>Cadastre apenas alunos que realmente serão acompanhados.</p></div><button class="botao-principal" id="abrirAluno">+ Cadastrar aluno</button></div>
+        <div class="caixa caixa-tabela">
+          <input class="pesquisa" id="pesquisaAluno" type="search" placeholder="Pesquisar por nome ou turma...">
+          <div class="vazio" id="alunosVazios"><b>Nenhum aluno cadastrado</b><span>Use o botão acima para realizar o primeiro cadastro.</span></div>
+          <div class="rolagem-tabela"><table id="tabelaAlunos"><thead><tr><th>Nome</th><th>Turma</th><th>Ocorrências</th><th>Situação</th><th>Ação</th></tr></thead><tbody></tbody></table></div>
         </div>
       </section>
 
-      <section class="page" id="ocorrencias">
-        <div class="page-actions"><div><h2>Histórico de ocorrências</h2><p>Consulte os registros disciplinares.</p></div><button class="main-button open-occurrence">+ Nova ocorrência</button></div>
-        <div class="box"><div class="empty" id="occurrencesEmpty"><b>Nenhuma ocorrência registrada</b><span>Cadastre um aluno antes de criar uma ocorrência.</span></div><div class="table-scroll"><table id="occurrencesTable"><thead><tr><th>Data</th><th>Aluno</th><th>Tipo</th><th>Responsável</th><th>Descrição</th></tr></thead><tbody></tbody></table></div></div>
+      <section class="pagina" id="ocorrencias">
+        <div class="acoes-pagina"><div><h2>Histórico de ocorrências</h2><p>Consulte os registros disciplinares.</p></div><button class="botao-principal abrir-ocorrencia">+ Nova ocorrência</button></div>
+        <div class="caixa"><div class="vazio" id="ocorrenciasVazias"><b>Nenhuma ocorrência registrada</b><span>Cadastre um aluno antes de criar uma ocorrência.</span></div><div class="rolagem-tabela"><table id="tabelaOcorrencias"><thead><tr><th>Data</th><th>Aluno</th><th>Tipo</th><th>Responsável</th><th>Descrição</th></tr></thead><tbody></tbody></table></div></div>
       </section>
 
-      <section class="page" id="biblioteca">
-        <div class="page-actions"><div><h2>Inventário da biblioteca</h2><p>Controle dos livros e materiais da escola.</p></div><button class="main-button" id="openLibraryItem">+ Cadastrar item</button></div>
-        <div class="library-cards">
-          <article><span>Títulos cadastrados</span><strong id="libraryTitles">0</strong></article>
-          <article><span>Total de exemplares</span><strong id="libraryCopies">0</strong></article>
-          <article><span>Disponíveis</span><strong id="libraryAvailable">0</strong></article>
-          <article class="attention"><span>Estoque baixo</span><strong id="libraryLow">0</strong></article>
+      <section class="pagina" id="biblioteca">
+        <div class="acoes-pagina"><div><h2>Estoque Da Biblioteca</h2><p>Controle dos livros e materiais da escola.</p></div><button class="botao-principal" id="abrirItemBiblioteca">+ Cadastrar item</button></div>
+        <div class="cartoes-biblioteca">
+          <article><span>Livros cadastrados</span><strong id="titulosBiblioteca">0</strong></article>
+          <article><span>Total de emprestimo</span><strong id="exemplaresBiblioteca">0</strong></article>
+          <article><span>Disponíveis</span><strong id="bibliotecaDisponiveis">0</strong></article>
+          <article class="atencao"><span>Estoque baixo</span><strong id="estoqueBaixoBiblioteca">0</strong></article>
         </div>
-        <div class="box table-box">
-          <div class="library-tools"><input class="search" id="librarySearch" type="search" placeholder="Pesquisar título, autor ou código..."><select id="libraryCategoryFilter"><option value="">Todas as categorias</option><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Revista</option><option>Outro</option></select></div>
-          <div class="empty" id="libraryEmpty"><b>Nenhum item cadastrado</b><span>Cadastre o primeiro livro ou material da biblioteca.</span></div>
-          <div class="table-scroll"><table id="libraryTable"><thead><tr><th>Código</th><th>Título</th><th>Autor</th><th>Categoria</th><th>Quantidade</th><th>Disponíveis</th><th>Estado</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+        <div class="caixa caixa-tabela">
+          <div class="ferramentas-biblioteca"><input class="pesquisa" id="pesquisaBiblioteca" type="search" placeholder="Pesquisar título, autor ou código..."><select id="filtroCategoriaBiblioteca"><option value="">Todas as categorias</option><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Revista</option><option>Outro</option></select></div>
+          <div class="vazio" id="bibliotecaVazia"><b>Nenhum item cadastrado</b><span>Cadastre o primeiro livro ou material da biblioteca.</span></div>
+          <div class="rolagem-tabela"><table id="tabelaBiblioteca"><thead><tr><th>Código</th><th>Título</th><th>Autor</th><th>Categoria</th><th>Quantidade</th><th>Disponíveis</th><th>Estado</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
         </div>
       </section>
 
-      <section class="page" id="relatorios">
-        <div class="page-actions"><div><h2>Relatórios</h2><p>Visão geral disponível para a direção.</p></div><button class="main-button" id="printReport">Imprimir relatório</button></div>
-        <div class="box report"><h3>Resumo disciplinar</h3><p id="reportSummary">Nenhum dado disponível para gerar o relatório.</p><div id="reportList"></div></div>
+      <section class="pagina" id="relatorios">
+        <div class="acoes-pagina"><div><h2>Relatórios</h2><p>Visão geral disponível para a direção.</p></div><button class="botao-principal" id="imprimirRelatorio">Imprimir relatório</button></div>
+        <div class="caixa relatorio"><h3>Resumo disciplinar</h3><p id="resumoRelatorio">Nenhum dado disponível para gerar o relatório.</p><div id="listaRelatorio"></div></div>
       </section>
     </main>
   </div>
 
-  <dialog id="studentDialog">
-    <form method="dialog" id="studentForm">
-      <div class="modal-title"><h2>Cadastrar aluno</h2><button value="cancel" aria-label="Fechar">×</button></div>
-      <label for="studentName">Nome completo</label>
-      <input id="studentName" required>
-      <label for="studentClass">Turma</label>
-      <input id="studentClass" placeholder="Ex.: 3º A" required>
-      <div class="modal-actions"><button value="cancel" class="cancel-button">Cancelar</button><button value="default" class="main-button" id="saveStudent">Salvar aluno</button></div>
+  <dialog id="janelaAluno">
+    <form method="dialog" id="formularioAluno">
+      <div class="titulo-modal"><h2>Cadastrar aluno</h2><button value="cancel" aria-label="Fechar">×</button></div>
+      <label for="nomeAluno">Nome completo</label>
+      <input id="nomeAluno" required>
+      <label for="turmaAluno">Turma</label>
+      <input id="turmaAluno" placeholder="Ex.: 3º A" required>
+      <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarAluno">Salvar aluno</button></div>
     </form>
   </dialog>
 
-  <dialog id="occurrenceDialog">
-    <form method="dialog" id="occurrenceForm">
-      <div class="modal-title"><h2>Nova ocorrência</h2><button value="cancel" aria-label="Fechar">×</button></div>
-      <label for="occurrenceStudent">Aluno</label>
-      <select id="occurrenceStudent" required><option value="">Selecione um aluno</option></select>
-      <label for="occurrenceType">Tipo</label>
-      <select id="occurrenceType" required><option>Comportamento inadequado</option><option>Desrespeito</option><option>Atraso</option><option>Falta sem justificativa</option><option>Suspensão</option><option>Outro</option></select>
-      <label for="occurrenceDescription">Descrição</label>
-      <textarea id="occurrenceDescription" rows="4" required></textarea>
-      <div class="modal-actions"><button value="cancel" class="cancel-button">Cancelar</button><button value="default" class="main-button" id="saveOccurrence">Registrar</button></div>
+  <dialog id="janelaOcorrencia">
+    <form method="dialog" id="formularioOcorrencia">
+      <div class="titulo-modal"><h2>Nova ocorrência</h2><button value="cancel" aria-label="Fechar">×</button></div>
+      <label for="alunoOcorrencia">Aluno</label>
+      <select id="alunoOcorrencia" required><option value="">Selecione um aluno</option></select>
+      <label for="tipoOcorrencia">Tipo</label>
+      <select id="tipoOcorrencia" required><option>Comportamento inadequado</option><option>Desrespeito</option><option>Atraso</option><option>Falta sem justificativa</option><option>Suspensão</option><option>Outro</option></select>
+      <label for="descricaoOcorrencia">Descrição</label>
+      <textarea id="descricaoOcorrencia" rows="4"></textarea>
+      <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarOcorrencia">Registrar</button></div>
     </form>
   </dialog>
 
-  <dialog id="libraryDialog">
-    <form method="dialog" id="libraryForm">
-      <div class="modal-title"><h2>Cadastrar item da biblioteca</h2><button value="cancel" aria-label="Fechar">×</button></div>
-      <div class="form-grid"><div><label for="bookCode">Código</label><input id="bookCode" placeholder="Ex.: LIV-001" required></div><div><label for="bookCategory">Categoria</label><select id="bookCategory" required><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Revista</option><option>Outro</option></select></div></div>
-      <label for="bookTitle">Título ou nome do material</label><input id="bookTitle" required>
-      <label for="bookAuthor">Autor ou responsável</label><input id="bookAuthor" placeholder="Use Não informado quando não houver" required>
-      <div class="form-grid"><div><label for="bookQuantity">Quantidade</label><input id="bookQuantity" type="number" min="1" value="1" required></div><div><label for="bookAvailable">Disponíveis</label><input id="bookAvailable" type="number" min="0" value="1" required></div></div>
-      <label for="bookCondition">Estado de conservação</label><select id="bookCondition"><option>Bom</option><option>Regular</option><option>Danificado</option></select>
-      <div class="modal-actions"><button value="cancel" class="cancel-button">Cancelar</button><button value="default" class="main-button" id="saveLibraryItem">Salvar item</button></div>
+  <dialog id="janelaBiblioteca">
+    <form method="dialog" id="formularioBiblioteca">
+      <div class="titulo-modal"><h2>Cadastrar item da biblioteca</h2><button value="cancel" aria-label="Fechar">×</button></div>
+      <div class="grade-formulario"><div><label for="codigoLivro">Código</label><input id="codigoLivro" placeholder="Ex.: LIV-001" required></div><div><label for="categoriaLivro">Categoria</label><select id="categoriaLivro" required><option>Romance</option><option>Terror</option><option>Aventura</option><option>Ação</option><option>Outro</option></select></div></div>
+      <label for="tituloLivro">Título ou nome do material</label><input id="tituloLivro" required>
+      <label for="autorLivro">Autor ou responsável</label><input id="autorLivro" placeholder="Use Não informado quando não houver" required>
+      <div class="grade-formulario"><div><label for="quantidadeLivro">Quantidade</label><input id="quantidadeLivro" type="number" min="1" value="1" required></div><div><label for="disponiveisLivro">Disponíveis</label><input id="disponiveisLivro" type="number" min="0" value="1" required></div></div>
+      <label for="estadoLivro">Estado de conservação</label><select id="estadoLivro"><option>Bom</option><option>Regular</option><option>Danificado</option></select>
+      <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarItemBiblioteca">Salvar item</button></div>
     </form>
   </dialog>
 
-  <div class="toast" id="toast" role="status"></div>
+  <div class="aviso-flutuante" id="aviso-flutuante" role="status"></div>
   <script src="interacao.js"></script>
 </body>
 </html>

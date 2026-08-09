@@ -28,18 +28,18 @@ button:hover {
 }
 
 /* Tela de entrada */
-.login-page {
+.pagina-login {
   background: white;
 }
 
-.login-info {
+.informacoes-login {
   position: relative;
-  overflow: hidden;
+  overflow: oculto;
   background: linear-gradient(140deg, #0b3478, #1767d8 70%, #3186ed);
 }
 
-.login-info::before,
-.login-info::after {
+.informacoes-login::before,
+.informacoes-login::after {
   content: "";
   position: absolute;
   width: 300px;
@@ -48,39 +48,39 @@ button:hover {
   border-radius: 50%;
 }
 
-.login-info::before {
+.informacoes-login::before {
   top: -130px;
   left: -100px;
 }
 
-.login-info::after {
+.informacoes-login::after {
   right: -100px;
   bottom: -150px;
 }
 
-.login-info img,
-.login-info h1,
-.login-info p {
+.informacoes-login img,
+.informacoes-login h1,
+.informacoes-login p {
   position: relative;
   z-index: 1;
 }
 
-.login-info img {
+.informacoes-login img {
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
 }
 
-.login-card {
+.cartao-login {
   padding: 38px;
   border: none;
   border-radius: 16px;
   box-shadow: 0 16px 50px rgba(37, 55, 85, 0.14);
 }
 
-.login-card h2 {
+.cartao-login h2 {
   font-size: 24px;
 }
 
-.login-card input,
+.cartao-login input,
 dialog input,
 dialog select,
 dialog textarea {
@@ -88,7 +88,7 @@ dialog textarea {
   background: #fbfcfe;
 }
 
-.login-card input:focus,
+.cartao-login input:focus,
 dialog input:focus,
 dialog select:focus,
 dialog textarea:focus {
@@ -96,82 +96,82 @@ dialog textarea:focus {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-.password-box {
+.caixa-senha {
   border-radius: 8px;
   background: #fbfcfe;
 }
 
-.main-button {
+.botao-principal {
   border-radius: 8px;
   box-shadow: 0 5px 12px rgba(37, 99, 235, 0.2);
 }
 
-.main-button:hover {
+.botao-principal:hover {
   background: #1554d1;
   box-shadow: 0 7px 16px rgba(37, 99, 235, 0.3);
 }
 
 /* Navegação */
-.sidebar {
+.barra-lateral {
   border: none;
   box-shadow: 3px 0 20px rgba(38, 56, 88, 0.06);
 }
 
-.brand {
+.marca {
   font-size: 19px;
   font-weight: 600;
 }
 
-.brand img {
+.marca img {
   border-radius: 11px;
   box-shadow: 0 5px 12px rgba(19, 58, 126, 0.18);
 }
 
-.nav-item {
+.item-navegacao {
   border-radius: 9px;
   font-weight: 500;
 }
 
-.nav-item:hover {
+.item-navegacao:hover {
   transform: translateX(3px);
 }
 
-.nav-item.active {
+.item-navegacao.ativo {
   box-shadow: inset 3px 0 var(--azul);
 }
 
-.user-circle {
+.circulo-usuario {
   background: linear-gradient(135deg, var(--azul), var(--azul-escuro));
   box-shadow: 0 4px 10px rgba(37, 99, 235, 0.22);
 }
 
-.topbar {
+.barra-superior {
   position: sticky;
   top: 0;
   z-index: 5;
   box-shadow: 0 3px 15px rgba(38, 56, 88, 0.04);
 }
 
-.notice-button {
+.botao-notificacao {
   border-radius: 9px;
 }
 
 /* Conteúdo principal */
-.page {
+.pagina {
   max-width: 1500px;
   margin: auto;
 }
 
-.welcome-card {
+.cartao-boas-vindas {
   position: relative;
-  overflow: hidden;
+  overflow: oculto;
   min-height: 145px;
   background: linear-gradient(110deg, #103b82, #1767d8);
   border-radius: 14px;
   box-shadow: 0 14px 30px rgba(22, 90, 190, 0.18);
 }
 
-.welcome-card::after {
+.cartao-boas-vindas::after {
   content: "</>";
   position: absolute;
   right: 5%;
@@ -180,63 +180,63 @@ dialog textarea:focus {
   font-weight: bold;
 }
 
-.welcome-card > * {
+.cartao-boas-vindas > * {
   position: relative;
   z-index: 1;
 }
 
-.white-button {
+.botao-branco {
   border-radius: 8px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
 }
 
-.cards article,
-.box,
-.library-cards article {
+.cartoes article,
+.caixa,
+.cartoes-biblioteca article {
   border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 12px;
   box-shadow: var(--sombra);
 }
 
-.cards article:hover,
-.library-cards article:hover {
+.cartoes article:hover,
+.cartoes-biblioteca article:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 28px rgba(38, 56, 88, 0.12);
 }
 
-.cards article,
-.library-cards article {
+.cartoes article,
+.cartoes-biblioteca article {
   transition: 0.25s;
 }
 
-.card-icon {
+.icone-cartao {
   border-radius: 10px;
 }
 
-.box {
+.caixa {
   padding: 23px;
 }
 
-.box-title h2,
-.page-actions h2 {
+.titulo-caixa h2,
+.acoes-pagina h2 {
   font-size: 16px;
 }
 
-.empty {
+.vazio {
   margin-top: 14px;
   border: 1px dashed #cdd7e5;
   border-radius: 10px;
   background: #fafcff;
 }
 
-.search,
-.library-tools select {
+.pesquisa,
+.ferramentas-biblioteca select {
   border-radius: 8px !important;
   background: #f9fbfd !important;
 }
 
-.search:focus,
-.library-tools select:focus {
+.pesquisa:focus,
+.ferramentas-biblioteca select:focus {
   outline: none;
   border-color: var(--azul);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
@@ -257,25 +257,25 @@ tbody tr:hover {
   background: #f8fbff;
 }
 
-.status,
+.situacao,
 .deadline-tag {
   border-radius: 20px;
 }
 
-.small-button {
+.botao-pequeno {
   border-radius: 6px;
 }
 
-.small-button:hover {
+.botao-pequeno:hover {
   border-color: var(--azul);
   background: var(--azul-claro);
 }
 
-.library-cards .attention {
+.cartoes-biblioteca .atencao {
   border-left: 4px solid #e49a2a;
 }
 
-.low-stock {
+.estoque-baixo {
   padding: 3px 7px;
   border-radius: 12px;
   background: #ffe9eb;
@@ -292,61 +292,63 @@ dialog::backdrop {
   backdrop-filter: blur(3px);
 }
 
-.modal-title {
+.titulo-modal {
   padding-bottom: 13px;
   border-bottom: 1px solid var(--borda);
 }
 
-.cancel-button {
+.botao-cancelar {
   border-radius: 8px;
 }
 
-.toast {
+.aviso-flutuante {
   border-radius: 9px;
   box-shadow: 0 10px 30px rgba(20, 32, 51, 0.22);
   transition: 0.3s;
   transform: translateY(15px);
 }
 
-.toast.show {
+.aviso-flutuante.visivel {
   transform: translateY(0);
 }
 
 @media (max-width: 650px) {
-  .login-info {
+  .informacoes-login {
     min-height: 220px;
   }
 
-  .login-card {
+  .cartao-login {
     padding: 28px;
   }
 
-  .welcome-card::after {
+  .cartao-boas-vindas::after {
     display: none;
   }
 
-  .sidebar {
+  .barra-lateral {
     box-shadow: 8px 0 25px rgba(30, 45, 70, 0.18);
   }
 }
 
 @media print {
-  .sidebar,
-  .topbar,
-  .page-actions button {
+  .barra-lateral,
+  .barra-superior,
+  .acoes-pagina button {
     display: none !important;
   }
 
-  .main-content {
+  .conteudo-principal {
     width: 100%;
     margin: 0;
   }
 
-  .page {
+  .pagina {
     display: none !important;
   }
 
-  #relatorios.active {
+  #relatorios.ativo {
     display: block !important;
   }
 }
+
+
