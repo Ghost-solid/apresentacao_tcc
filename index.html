@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="DS Legacy - sistema de acompanhamento disciplinar escolar.">
-  <title>DS Legacy | Gestão Escolar</title>
+  <meta name="description" content="DS Legacy - sistema de gestão da biblioteca escolar.">
+  <title>DS Legacy | Biblioteca Escolar</title>
   <link rel="stylesheet" href="estilo.css">
   <link rel="stylesheet" href="biblioteca.css">
   <link rel="stylesheet" href="apresentacao.css">
@@ -14,159 +14,95 @@
     <div class="informacoes-login">
       <img src="images/1000043352.jpg" alt="Logo DS Legacy">
       <h1>DS Legacy</h1>
-      <p>Acompanhamento disciplinar simples e seguro para professores e diretores.</p>
+      <p>Gestão simples e segura para a biblioteca escolar.</p>
     </div>
-
     <form class="cartao-login" id="formularioLogin">
       <h2>Entrar no sistema</h2>
       <p>Utilize uma conta autorizada pela escola.</p>
-
       <label for="usuario">Usuário</label>
       <input id="usuario" name="usuario" type="text" autocomplete="username" required>
-
       <label for="senha">Senha</label>
-      <div class="caixa-senha">
-        <input id="senha" name="senha" type="password" autocomplete="current-password" required>
-        <button type="button" id="mostrarSenha" aria-label="Mostrar senha">👁</button>
-      </div>
-
+      <div class="caixa-senha"><input id="senha" name="senha" type="password" autocomplete="current-password" required><button type="button" id="mostrarSenha" aria-label="Mostrar senha">👁</button></div>
       <p class="erro-login" id="erroLogin" role="alert"></p>
       <button class="botao-principal" type="submit">Acessar</button>
-
-      <div class="contas-teste">
-        <strong>Contas para teste</strong>
-        <span>Professor: testeprofessor / Professor@123</span>
-        <span>Diretor: testediretor / Diretor@123</span>
-      </div>
+      <div class="contas-teste"><strong>Contas para teste</strong><span>Biblioteca: testebiblioteca / Biblioteca@123</span><span>Diretor: testediretor / Diretor@123</span></div>
     </form>
   </section>
 
   <div class="sistema oculto" id="sistema">
     <aside class="barra-lateral" id="barra-lateral">
-      <div class="marca">
-        <img src="images/1000043352.jpg" alt="Logo DS Legacy">
-        <span><b>DS</b> Legacy</span>
-      </div>
-
+      <div class="marca"><img src="images/1000043352.jpg" alt="Logo DS Legacy"><span><b>DS</b> Legacy</span></div>
       <nav>
-        <button class="item-navegacao ativo" data-pagina="painel">▦ <span>Painel principal</span></button>
-        <button class="item-navegacao" data-pagina="alunos">♙ <span>Alunos</span></button>
-        <button class="item-navegacao" data-pagina="ocorrencias">⚠ <span>Ocorrências</span></button>
-        <button class="item-navegacao" data-pagina="biblioteca">▥ <span>Biblioteca</span></button>
+        <button class="item-navegacao ativo" data-pagina="painel">▦ <span>Painel</span></button>
+        <button class="item-navegacao" data-pagina="leitores">♙ <span>Leitores</span></button>
+        <button class="item-navegacao" data-pagina="biblioteca">▥ <span>Estoque</span></button>
+        <button class="item-navegacao" data-pagina="emprestimos">⇄ <span>Empréstimos</span></button>
         <button class="item-navegacao somente-diretor" data-pagina="relatorios">▤ <span>Relatórios</span></button>
       </nav>
-
-      <div class="usuario-logado">
-        <div class="circulo-usuario" id="inicialUsuario">U</div>
-        <div><strong id="nomeUsuario">Usuário</strong><span id="perfilUsuario">Perfil</span></div>
-      </div>
+      <div class="usuario-logado"><div class="circulo-usuario" id="inicialUsuario">U</div><div><strong id="nomeUsuario">Usuário</strong><span id="perfilUsuario">Perfil</span></div></div>
       <button class="sair" id="botaoSair">↪ Sair</button>
     </aside>
 
     <main class="conteudo-principal">
-      <header class="barra-superior">
-        <button class="menu-celular" id="menuCelular">☰</button>
-        <div><h1 id="tituloPagina">Painel principal</h1><p id="textoHoje"></p></div>
-        <button class="botao-notificacao" id="botaoNotificacao">🔔 <span id="quantidadeNotificacoes">0</span></button>
-      </header>
+      <header class="barra-superior"><button class="menu-celular" id="menuCelular">☰</button><div><h1 id="tituloPagina">Painel</h1><p id="textoHoje"></p></div><button class="botao-notificacao" id="botaoNotificacao">🔔 <span id="quantidadeNotificacoes">0</span></button></header>
 
       <section class="pagina ativo" id="painel">
-        <div class="cartao-boas-vindas">
-          <div><span id="saudacaoPerfil">ÁREA DO PROFESSOR</span><h2>Bem-vindo ao DS Legacy</h2><p>Tornando a escola um hambiente melhor para todos.</p></div>
-          <button class="botao-branco abrir-ocorrencia">+ Nova ocorrência</button>
-        </div>
-
+        <div class="cartao-boas-vindas"><div><span>GESTÃO DA BIBLIOTECA</span><h2>Bem-vindo ao DS Legacy</h2><p>Controle o Estoque, os empréstimos e as devoluções em um só lugar.</p></div><button class="botao-branco abrir-emprestimo">+ Novo empréstimo</button></div>
         <div class="cartoes">
-          <article><div class="icone-cartao azul">♙</div><div><span>Alunos cadastrados</span><strong id="totalAlunos">0</strong></div></article>
-          <article><div class="icone-cartao laranja">⚠</div><div><span>Ocorrências registradas</span><strong id="totalOcorrencias">0</strong></div></article>
-          <article><div class="icone-cartao vermelho">!</div><div><span>Alertas ativos</span><strong id="totalAlertas">0</strong></div></article>
-          <article><div class="icone-cartao verde">✓</div><div><span>Registros neste mês</span><strong id="totalMes">0</strong></div></article>
+          <article><div class="icone-cartao azul">▥</div><div><span>Títulos no Estoque</span><strong id="totalTitulos">0</strong></div></article>
+          <article><div class="icone-cartao laranja">⇄</div><div><span>Empréstimos ativos</span><strong id="totalEmprestimos">0</strong></div></article>
+          <article><div class="icone-cartao vermelho">!</div><div><span>Devoluções atrasadas</span><strong id="totalAtrasados">0</strong></div></article>
+          <article><div class="icone-cartao verde">♙</div><div><span>Leitores cadastrados</span><strong id="totalLeitores">0</strong></div></article>
         </div>
-
         <div class="colunas-painel">
-          <section class="caixa">
-            <div class="titulo-caixa"><div><h2>Alunos em acompanhamento</h2><p>O alerta é ativado ao chegar em 5 ocorrências.</p></div><button class="botao-link" data-go="alunos">Ver alunos</button></div>
-            <div class="vazio" id="acompanhamentoVazio"><b>Nenhum aluno em acompanhamento</b><span>Cadastre um aluno e registre ocorrências para começar.</span></div>
-            <div class="lista-alunos" id="listaAcompanhamento"></div>
-          </section>
-
-          <section class="caixa">
-            <div class="titulo-caixa"><div><h2>Ocorrências recentes</h2><p>Últimos registros realizados.</p></div></div>
-            <div class="vazio" id="recentesVazias"><b>Nenhuma ocorrência registrada</b><span>Os novos registros aparecerão aqui.</span></div>
-            <div id="listaRecentes"></div>
-          </section>
+          <section class="caixa"><div class="titulo-caixa"><div><h2>Devoluções próximas</h2><p>Empréstimos ativos por prazo.</p></div><button class="botao-link" data-go="emprestimos">Ver todos</button></div><div class="vazio" id="proximasVazias"><b>Nenhum empréstimo ativo</b><span>Os próximos prazos aparecerão aqui.</span></div><div id="listaProximas"></div></section>
+          <section class="caixa"><div class="titulo-caixa"><div><h2>Leitores bloqueados</h2><p>Bloqueio por atraso na devolução.</p></div></div><div class="vazio" id="bloqueadosVazios"><b>Nenhum leitor bloqueado</b><span>Não existem multas ativas.</span></div><div id="listaBloqueados"></div></section>
         </div>
       </section>
 
-      <section class="pagina" id="alunos">
-        <div class="acoes-pagina"><div><h2>Alunos cadastrados</h2><p>Cadastre apenas alunos que realmente serão acompanhados.</p></div><button class="botao-principal" id="abrirAluno">+ Cadastrar aluno</button></div>
-        <div class="caixa caixa-tabela">
-          <input class="pesquisa" id="pesquisaAluno" type="search" placeholder="Pesquisar por nome ou turma...">
-          <div class="vazio" id="alunosVazios"><b>Nenhum aluno cadastrado</b><span>Use o botão acima para realizar o primeiro cadastro.</span></div>
-          <div class="rolagem-tabela"><table id="tabelaAlunos"><thead><tr><th>Nome</th><th>Turma</th><th>Ocorrências</th><th>Situação</th><th>Ação</th></tr></thead><tbody></tbody></table></div>
-        </div>
-      </section>
-
-      <section class="pagina" id="ocorrencias">
-        <div class="acoes-pagina"><div><h2>Histórico de ocorrências</h2><p>Consulte os registros disciplinares.</p></div><button class="botao-principal abrir-ocorrencia">+ Nova ocorrência</button></div>
-        <div class="caixa"><div class="vazio" id="ocorrenciasVazias"><b>Nenhuma ocorrência registrada</b><span>Cadastre um aluno antes de criar uma ocorrência.</span></div><div class="rolagem-tabela"><table id="tabelaOcorrencias"><thead><tr><th>Data</th><th>Aluno</th><th>Tipo</th><th>Responsável</th><th>Descrição</th></tr></thead><tbody></tbody></table></div></div>
+      <section class="pagina" id="leitores">
+        <div class="acoes-pagina"><div><h2>Leitores cadastrados</h2><p>Alunos, professores e funcionários que utilizam a biblioteca.</p></div><button class="botao-principal" id="abrirLeitor">+ Cadastrar leitor</button></div>
+        <div class="caixa caixa-tabela"><input class="pesquisa" id="pesquisaLeitor" type="search" placeholder="Pesquisar nome, matrícula ou turma..."><div class="vazio" id="leitoresVazios"><b>Nenhum leitor cadastrado</b><span>Cadastre o primeiro leitor da biblioteca.</span></div><div class="rolagem-tabela"><table id="tabelaLeitores"><thead><tr><th>Nome</th><th>Matrícula</th><th>Tipo</th><th>Turma/Setor</th><th>Advertências</th><th>Situação</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
       </section>
 
       <section class="pagina" id="biblioteca">
-        <div class="acoes-pagina"><div><h2>Estoque Da Biblioteca</h2><p>Controle dos livros e materiais da escola.</p></div><button class="botao-principal" id="abrirItemBiblioteca">+ Cadastrar item</button></div>
-        <div class="cartoes-biblioteca">
-          <article><span>Livros cadastrados</span><strong id="titulosBiblioteca">0</strong></article>
-          <article><span>Total de emprestimo</span><strong id="exemplaresBiblioteca">0</strong></article>
-          <article><span>Disponíveis</span><strong id="bibliotecaDisponiveis">0</strong></article>
-          <article class="atencao"><span>Estoque baixo</span><strong id="estoqueBaixoBiblioteca">0</strong></article>
-        </div>
-        <div class="caixa caixa-tabela">
-          <div class="ferramentas-biblioteca"><input class="pesquisa" id="pesquisaBiblioteca" type="search" placeholder="Pesquisar título, autor ou código..."><select id="filtroCategoriaBiblioteca"><option value="">Todas as categorias</option><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Revista</option><option>Outro</option></select></div>
-          <div class="vazio" id="bibliotecaVazia"><b>Nenhum item cadastrado</b><span>Cadastre o primeiro livro ou material da biblioteca.</span></div>
-          <div class="rolagem-tabela"><table id="tabelaBiblioteca"><thead><tr><th>Código</th><th>Título</th><th>Autor</th><th>Categoria</th><th>Quantidade</th><th>Disponíveis</th><th>Estado</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
-        </div>
+        <div class="acoes-pagina"><div><h2>Estoque da biblioteca</h2><p>Cadastro e localização dos livros da escola.</p></div><button class="botao-principal" id="abrirItemBiblioteca">+ Cadastrar livro</button></div>
+        <div class="cartoes-biblioteca"><article><span>Títulos cadastrados</span><strong id="titulosBiblioteca">0</strong></article><article><span>Total de exemplares</span><strong id="exemplaresBiblioteca">0</strong></article><article><span>Disponíveis</span><strong id="bibliotecaDisponiveis">0</strong></article><article class="atencao"><span>Sem disponibilidade</span><strong id="estoqueBaixoBiblioteca">0</strong></article></div>
+        <div class="caixa caixa-tabela"><div class="ferramentas-biblioteca"><input class="pesquisa" id="pesquisaBiblioteca" type="search" placeholder="Pesquisar título, autor, ISBN ou código..."><select id="filtroCategoriaBiblioteca"><option value="">Todas as categorias</option><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Infantil</option><option>Biografia</option><option>Outro</option></select></div><div class="vazio" id="bibliotecaVazia"><b>Nenhum livro cadastrado</b><span>Cadastre o primeiro livro do Estoque.</span></div><div class="rolagem-tabela"><table id="tabelaBiblioteca"><thead><tr><th>Código</th><th>Título</th><th>Autor</th><th>ISBN</th><th>Local</th><th>Total</th><th>Disponíveis</th><th>Estado</th></tr></thead><tbody></tbody></table></div></div>
+      </section>
+
+      <section class="pagina" id="emprestimos">
+        <div class="acoes-pagina"><div><h2>Empréstimos e devoluções</h2><p>Acompanhe prazos, atrasos e bloqueios.</p></div><button class="botao-principal abrir-emprestimo">+ Novo empréstimo</button></div>
+        <div class="filtros-emprestimos"><button class="filtro-emprestimo ativo" data-filtro="ativos">Ativos</button><button class="filtro-emprestimo" data-filtro="atrasados">Atrasados</button><button class="filtro-emprestimo" data-filtro="devolvidos">Devolvidos</button><button class="filtro-emprestimo" data-filtro="todos">Todos</button></div>
+        <div class="caixa"><div class="vazio" id="emprestimosVazios"><b>Nenhum empréstimo encontrado</b><span>Use o botão acima para registrar um empréstimo.</span></div><div class="rolagem-tabela"><table id="tabelaEmprestimos"><thead><tr><th>Leitor</th><th>Livro</th><th>Empréstimo</th><th>Prazo</th><th>Devolução</th><th>Situação</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
       </section>
 
       <section class="pagina" id="relatorios">
-        <div class="acoes-pagina"><div><h2>Relatórios</h2><p>Visão geral disponível para a direção.</p></div><button class="botao-principal" id="imprimirRelatorio">Imprimir relatório</button></div>
-        <div class="caixa relatorio"><h3>Resumo disciplinar</h3><p id="resumoRelatorio">Nenhum dado disponível para gerar o relatório.</p><div id="listaRelatorio"></div></div>
+        <div class="acoes-pagina"><div><h2>Relatório da biblioteca</h2><p>Resumo do Estoque e das movimentações.</p></div><button class="botao-principal" id="imprimirRelatorio">Imprimir relatório</button></div>
+        <div class="caixa relatorio"><h3>Resumo geral</h3><p id="resumoRelatorio">Nenhum dado disponível.</p><div id="listaRelatorio"></div></div>
       </section>
     </main>
   </div>
 
-  <dialog id="janelaAluno">
-    <form method="dialog" id="formularioAluno">
-      <div class="titulo-modal"><h2>Cadastrar aluno</h2><button value="cancel" aria-label="Fechar">×</button></div>
-      <label for="nomeAluno">Nome completo</label>
-      <input id="nomeAluno" required>
-      <label for="turmaAluno">Turma</label>
-      <input id="turmaAluno" placeholder="Ex.: 3º A" required>
-      <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarAluno">Salvar aluno</button></div>
-    </form>
-  </dialog>
+  <dialog id="janelaLeitor"><form method="dialog" id="formularioLeitor"><div class="titulo-modal"><h2>Cadastrar leitor</h2><button value="cancel" aria-label="Fechar">×</button></div><label for="nomeLeitor">Nome completo</label><input id="nomeLeitor" required><div class="grade-formulario"><div><label for="matriculaLeitor">Matrícula/Registro</label><input id="matriculaLeitor" required></div><div><label for="tipoLeitor">Tipo</label><select id="tipoLeitor" data-campo-outro="outroTipoLeitor"><option>Aluno</option><option>Professor</option><option>Funcionário</option><option>Outro</option></select><input class="campo-outro oculto" id="outroTipoLeitor" placeholder="Digite o tipo de leitor"></div></div><label for="turmaLeitor">Turma ou setor</label><input id="turmaLeitor" required><div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarLeitor">Salvar leitor</button></div></form></dialog>
 
-  <dialog id="janelaOcorrencia">
-    <form method="dialog" id="formularioOcorrencia">
-      <div class="titulo-modal"><h2>Nova ocorrência</h2><button value="cancel" aria-label="Fechar">×</button></div>
-      <label for="alunoOcorrencia">Aluno</label>
-      <select id="alunoOcorrencia" required><option value="">Selecione um aluno</option></select>
-      <label for="tipoOcorrencia">Tipo</label>
-      <select id="tipoOcorrencia" required><option>Comportamento inadequado</option><option>Desrespeito</option><option>Atraso</option><option>Falta sem justificativa</option><option>Suspensão</option><option>Outro</option></select>
-      <label for="descricaoOcorrencia">Descrição</label>
-      <textarea id="descricaoOcorrencia" rows="4"></textarea>
-      <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarOcorrencia">Registrar</button></div>
-    </form>
-  </dialog>
+  <dialog id="janelaBiblioteca" class="janela-grande"><form method="dialog" id="formularioBiblioteca"><div class="titulo-modal"><h2>Cadastrar livro</h2><button value="cancel" aria-label="Fechar">×</button></div><div class="grade-formulario"><div><label for="codigoLivro">Código interno</label><input id="codigoLivro" placeholder="Ex.: LIV-001" required></div><div><label for="isbnLivro">ISBN</label><input id="isbnLivro" placeholder="Ex.: 9788535914849"></div></div><label for="tituloLivro">Título</label><input id="tituloLivro" required><div class="grade-formulario"><div><label for="autorLivro">Autor</label><input id="autorLivro" required></div><div><label for="editoraLivro">Editora</label><input id="editoraLivro" required></div></div><div class="grade-formulario"><div><label for="categoriaLivro">Categoria</label><select id="categoriaLivro" data-campo-outro="outraCategoriaLivro"><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Infantil</option><option>Biografia</option><option>Outro</option></select><input class="campo-outro oculto" id="outraCategoriaLivro" placeholder="Digite a categoria"></div><div><label for="anoLivro">Ano de publicação</label><input id="anoLivro" type="number" min="1000" max="2100"></div></div><div class="grade-formulario"><div><label for="localLivro">Estante/Prateleira</label><input id="localLivro" placeholder="Ex.: Estante A - P2" required></div><div><label for="quantidadeLivro">Quantidade de exemplares</label><input id="quantidadeLivro" type="number" min="1" value="1" required></div></div><label for="estadoLivro">Estado de conservação</label><select id="estadoLivro" data-campo-outro="outroEstadoLivro"><option>Bom</option><option>Regular</option><option>Danificado</option><option>Outro</option></select><input class="campo-outro oculto" id="outroEstadoLivro" placeholder="Descreva o estado de conservação"><div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarItemBiblioteca">Salvar livro</button></div></form></dialog>
 
-  <dialog id="janelaBiblioteca">
-    <form method="dialog" id="formularioBiblioteca">
-      <div class="titulo-modal"><h2>Cadastrar item da biblioteca</h2><button value="cancel" aria-label="Fechar">×</button></div>
-      <div class="grade-formulario"><div><label for="codigoLivro">Código</label><input id="codigoLivro" placeholder="Ex.: LIV-001" required></div><div><label for="categoriaLivro">Categoria</label><select id="categoriaLivro" required><option>Romance</option><option>Terror</option><option>Aventura</option><option>Ação</option><option>Outro</option></select></div></div>
-      <label for="tituloLivro">Título ou nome do material</label><input id="tituloLivro" required>
-      <label for="autorLivro">Autor ou responsável</label><input id="autorLivro" placeholder="Use Não informado quando não houver" required>
-      <div class="grade-formulario"><div><label for="quantidadeLivro">Quantidade</label><input id="quantidadeLivro" type="number" min="1" value="1" required></div><div><label for="disponiveisLivro">Disponíveis</label><input id="disponiveisLivro" type="number" min="0" value="1" required></div></div>
-      <label for="estadoLivro">Estado de conservação</label><select id="estadoLivro"><option>Bom</option><option>Regular</option><option>Danificado</option></select>
-      <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarItemBiblioteca">Salvar item</button></div>
+  <dialog id="janelaEmprestimo"><form method="dialog" id="formularioEmprestimo"><div class="titulo-modal"><h2>Registrar empréstimo</h2><button value="cancel" aria-label="Fechar">×</button></div><label for="pesquisaLeitorEmprestimo">Pesquisar leitor</label><input id="pesquisaLeitorEmprestimo" type="search" placeholder="Digite o nome ou a matrícula"><label for="leitorEmprestimo">Escolher leitor</label><select id="leitorEmprestimo" required><option value="">Selecione um leitor</option></select><p class="aviso-bloqueio oculto" id="avisoBloqueio"></p><label for="pesquisaLivroEmprestimo">Pesquisar livro</label><input id="pesquisaLivroEmprestimo" type="search" placeholder="Digite o título, autor, ISBN ou código"><label for="livroEmprestimo">Escolher livro disponível</label><select id="livroEmprestimo" required><option value="">Selecione um livro</option></select><div class="grade-formulario"><div><label for="dataEmprestimo">Data do empréstimo</label><input id="dataEmprestimo" type="date" required></div><div><label for="dataPrazo">Prazo de devolução</label><input id="dataPrazo" type="date" required></div></div><div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarEmprestimo">Confirmar empréstimo</button></div></form></dialog>
+
+  <dialog id="janelaDevolucao">
+    <form method="dialog" id="formularioDevolucao">
+      <div class="titulo-modal"><h2>Conferir devolução</h2><button value="cancel" aria-label="Fechar">×</button></div>
+      <div class="resumo-devolucao" id="resumoDevolucao"></div>
+      <label for="estadoDevolucao">Estado do livro na devolução</label>
+      <select id="estadoDevolucao" data-campo-outro="outroEstadoDevolucao" required>
+        <option>Bom</option><option>Regular</option><option>Danificado</option><option>Livro perdido</option><option>Outro</option>
+      </select>
+      <input class="campo-outro oculto" id="outroEstadoDevolucao" placeholder="Descreva o estado encontrado">
+      <label for="observacaoDevolucao">Observação</label>
+      <textarea id="observacaoDevolucao" rows="4" placeholder="Descreva avarias, páginas rasgadas, riscos ou outras informações"></textarea>
+      <p class="explicacao-advertencia">Se o estado informado não for “Bom”, uma advertência será registrada no histórico do leitor.</p>
+      <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="confirmarDevolucao">Confirmar devolução</button></div>
     </form>
   </dialog>
 

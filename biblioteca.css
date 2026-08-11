@@ -58,6 +58,126 @@
   gap: 12px;
 }
 
+.campo-outro {
+  margin-top: 8px;
+  border-color: var(--azul);
+  background: #f8fbff;
+}
+
+.janela-grande {
+  width: 620px;
+}
+
+.detalhe-livro {
+  display: block;
+  margin-top: 4px;
+  color: var(--cinza);
+  font-size: 8px;
+}
+
+.filtros-emprestimos {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.filtro-emprestimo {
+  padding: 8px 13px;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: white;
+  color: var(--cinza);
+  font-size: 10px;
+}
+
+.filtro-emprestimo.ativo {
+  border-color: var(--azul);
+  background: var(--azul-claro);
+  color: var(--azul);
+  font-weight: bold;
+}
+
+.situacao.andamento {
+  background: #e7f0ff;
+  color: var(--azul);
+}
+
+.situacao.atrasado {
+  background: #ffe4e6;
+  color: #c93845;
+}
+
+.situacao.devolvido {
+  background: #e4f7eb;
+  color: #27844b;
+}
+
+.aviso-bloqueio {
+  margin: 9px 0 0;
+  padding: 9px;
+  border-radius: 5px;
+  background: #ffe5e7;
+  color: #b72f3b;
+  font-size: 10px;
+}
+
+.aviso-bloqueio.liberado {
+  background: #e4f7eb;
+  color: #27844b;
+}
+
+.resumo-devolucao {
+  margin: 15px 0;
+  padding: 12px;
+  border: 1px solid var(--borda);
+  border-radius: 7px;
+  background: #f6f9fd;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.resumo-devolucao b {
+  font-size: 13px;
+}
+
+.resumo-devolucao span {
+  color: var(--cinza);
+  font-size: 9px;
+}
+
+.explicacao-advertencia {
+  padding: 9px;
+  border-left: 3px solid #d88a20;
+  background: #fff8e8;
+  color: #875b18;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.contador-advertencias {
+  display: inline-block;
+  min-width: 23px;
+  padding: 4px 7px;
+  border-radius: 12px;
+  background: #edf1f6;
+  color: var(--cinza);
+  text-align: center;
+  font-size: 9px;
+  font-weight: bold;
+}
+
+.contador-advertencias.possui {
+  background: #ffe4e6;
+  color: #c93845;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
 @media (max-width: 900px) {
   .cartoes-biblioteca {
     grid-template-columns: 1fr 1fr;
@@ -77,6 +197,8 @@
   .grade-formulario {
     grid-template-columns: 1fr;
   }
+
+  .filtros-emprestimos {
+    overflow-x: auto;
+  }
 }
-
-
