@@ -64,6 +64,16 @@
   background: #f8fbff;
 }
 
+.ajuda-estoque {
+  margin: 9px 0;
+  padding: 9px;
+  border-left: 3px solid var(--azul);
+  background: var(--azul-claro);
+  color: var(--cinza);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
 .janela-grande {
   width: 620px;
 }
@@ -155,6 +165,77 @@
   line-height: 1.4;
 }
 
+.explicacao-renovacao {
+  padding: 9px;
+  border-left: 3px solid var(--azul);
+  background: var(--azul-claro);
+  color: var(--cinza);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.acoes-emprestimo {
+  display: flex;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.janela-historico {
+  width: 850px;
+}
+
+.cabecalho-historico {
+  padding: 18px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cabecalho-historico h3 {
+  margin: 0 0 5px;
+  font-size: 18px;
+}
+
+.cabecalho-historico p {
+  margin: 0;
+  color: var(--cinza);
+  font-size: 10px;
+}
+
+.mensagem-bloqueio-historico {
+  padding: 10px;
+  border-radius: 6px;
+  background: #ffe4e6;
+  color: #b72f3b;
+  font-size: 10px;
+}
+
+.resumo-historico {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.resumo-historico article {
+  padding: 13px;
+  border: 1px solid var(--borda);
+  border-radius: 7px;
+  background: #f8fafd;
+  display: flex;
+  flex-direction: column;
+}
+
+.resumo-historico span {
+  margin-bottom: 5px;
+  color: var(--cinza);
+  font-size: 8px;
+}
+
+.resumo-historico strong {
+  font-size: 18px;
+}
+
 .contador-advertencias {
   display: inline-block;
   min-width: 23px;
@@ -200,5 +281,9 @@ button:disabled {
 
   .filtros-emprestimos {
     overflow-x: auto;
+  }
+
+  .resumo-historico {
+    grid-template-columns: 1fr 1fr;
   }
 }

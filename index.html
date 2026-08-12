@@ -37,6 +37,7 @@
         <button class="item-navegacao" data-pagina="leitores">♙ <span>Leitores</span></button>
         <button class="item-navegacao" data-pagina="biblioteca">▥ <span>Estoque</span></button>
         <button class="item-navegacao" data-pagina="emprestimos">⇄ <span>Empréstimos</span></button>
+        <button class="item-navegacao" data-pagina="reservas">⌛ <span>Reservas</span></button>
         <button class="item-navegacao somente-diretor" data-pagina="relatorios">▤ <span>Relatórios</span></button>
       </nav>
       <div class="usuario-logado"><div class="circulo-usuario" id="inicialUsuario">U</div><div><strong id="nomeUsuario">Usuário</strong><span id="perfilUsuario">Perfil</span></div></div>
@@ -68,13 +69,18 @@
       <section class="pagina" id="biblioteca">
         <div class="acoes-pagina"><div><h2>Estoque da biblioteca</h2><p>Cadastro e localização dos livros da escola.</p></div><button class="botao-principal" id="abrirItemBiblioteca">+ Cadastrar livro</button></div>
         <div class="cartoes-biblioteca"><article><span>Títulos cadastrados</span><strong id="titulosBiblioteca">0</strong></article><article><span>Total de exemplares</span><strong id="exemplaresBiblioteca">0</strong></article><article><span>Disponíveis</span><strong id="bibliotecaDisponiveis">0</strong></article><article class="atencao"><span>Sem disponibilidade</span><strong id="estoqueBaixoBiblioteca">0</strong></article></div>
-        <div class="caixa caixa-tabela"><div class="ferramentas-biblioteca"><input class="pesquisa" id="pesquisaBiblioteca" type="search" placeholder="Pesquisar título, autor, ISBN ou código..."><select id="filtroCategoriaBiblioteca"><option value="">Todas as categorias</option><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Infantil</option><option>Biografia</option><option>Outro</option></select></div><div class="vazio" id="bibliotecaVazia"><b>Nenhum livro cadastrado</b><span>Cadastre o primeiro livro do Estoque.</span></div><div class="rolagem-tabela"><table id="tabelaBiblioteca"><thead><tr><th>Código</th><th>Título</th><th>Autor</th><th>ISBN</th><th>Local</th><th>Total</th><th>Disponíveis</th><th>Estado</th></tr></thead><tbody></tbody></table></div></div>
+        <div class="caixa caixa-tabela"><div class="ferramentas-biblioteca"><input class="pesquisa" id="pesquisaBiblioteca" type="search" placeholder="Pesquisar título, autor, ISBN ou código..."><select id="filtroCategoriaBiblioteca"><option value="">Todas as categorias</option><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Infantil</option><option>Biografia</option><option>Outro</option></select></div><div class="vazio" id="bibliotecaVazia"><b>Nenhum livro cadastrado</b><span>Cadastre o primeiro livro do Estoque.</span></div><div class="rolagem-tabela"><table id="tabelaBiblioteca"><thead><tr><th>Código</th><th>Título</th><th>Autor</th><th>ISBN</th><th>Local</th><th>Total</th><th>Disponíveis</th><th>Estado</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
       </section>
 
       <section class="pagina" id="emprestimos">
         <div class="acoes-pagina"><div><h2>Empréstimos e devoluções</h2><p>Acompanhe prazos, atrasos e bloqueios.</p></div><button class="botao-principal abrir-emprestimo">+ Novo empréstimo</button></div>
         <div class="filtros-emprestimos"><button class="filtro-emprestimo ativo" data-filtro="ativos">Ativos</button><button class="filtro-emprestimo" data-filtro="atrasados">Atrasados</button><button class="filtro-emprestimo" data-filtro="devolvidos">Devolvidos</button><button class="filtro-emprestimo" data-filtro="todos">Todos</button></div>
         <div class="caixa"><div class="vazio" id="emprestimosVazios"><b>Nenhum empréstimo encontrado</b><span>Use o botão acima para registrar um empréstimo.</span></div><div class="rolagem-tabela"><table id="tabelaEmprestimos"><thead><tr><th>Leitor</th><th>Livro</th><th>Empréstimo</th><th>Prazo</th><th>Devolução</th><th>Situação</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
+      </section>
+
+      <section class="pagina" id="reservas">
+        <div class="acoes-pagina"><div><h2>Reservas de livros</h2><p>Fila de espera para títulos sem exemplares disponíveis.</p></div><button class="botao-principal" id="abrirReserva">+ Nova reserva</button></div>
+        <div class="caixa"><div class="vazio" id="reservasVazias"><b>Nenhuma reserva registrada</b><span>As filas de espera aparecerão aqui.</span></div><div class="rolagem-tabela"><table id="tabelaReservas"><thead><tr><th>Posição</th><th>Livro</th><th>Leitor</th><th>Data</th><th>Situação</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
       </section>
 
       <section class="pagina" id="relatorios">
@@ -86,7 +92,7 @@
 
   <dialog id="janelaLeitor"><form method="dialog" id="formularioLeitor"><div class="titulo-modal"><h2>Cadastrar leitor</h2><button value="cancel" aria-label="Fechar">×</button></div><label for="nomeLeitor">Nome completo</label><input id="nomeLeitor" required><div class="grade-formulario"><div><label for="matriculaLeitor">Matrícula/Registro</label><input id="matriculaLeitor" required></div><div><label for="tipoLeitor">Tipo</label><select id="tipoLeitor" data-campo-outro="outroTipoLeitor"><option>Aluno</option><option>Professor</option><option>Funcionário</option><option>Outro</option></select><input class="campo-outro oculto" id="outroTipoLeitor" placeholder="Digite o tipo de leitor"></div></div><label for="turmaLeitor">Turma ou setor</label><input id="turmaLeitor" required><div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarLeitor">Salvar leitor</button></div></form></dialog>
 
-  <dialog id="janelaBiblioteca" class="janela-grande"><form method="dialog" id="formularioBiblioteca"><div class="titulo-modal"><h2>Cadastrar livro</h2><button value="cancel" aria-label="Fechar">×</button></div><div class="grade-formulario"><div><label for="codigoLivro">Código interno</label><input id="codigoLivro" placeholder="Ex.: LIV-001" required></div><div><label for="isbnLivro">ISBN</label><input id="isbnLivro" placeholder="Ex.: 9788535914849"></div></div><label for="tituloLivro">Título</label><input id="tituloLivro" required><div class="grade-formulario"><div><label for="autorLivro">Autor</label><input id="autorLivro" required></div><div><label for="editoraLivro">Editora</label><input id="editoraLivro" required></div></div><div class="grade-formulario"><div><label for="categoriaLivro">Categoria</label><select id="categoriaLivro" data-campo-outro="outraCategoriaLivro"><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Infantil</option><option>Biografia</option><option>Outro</option></select><input class="campo-outro oculto" id="outraCategoriaLivro" placeholder="Digite a categoria"></div><div><label for="anoLivro">Ano de publicação</label><input id="anoLivro" type="number" min="1000" max="2100"></div></div><div class="grade-formulario"><div><label for="localLivro">Estante/Prateleira</label><input id="localLivro" placeholder="Ex.: Estante A - P2" required></div><div><label for="quantidadeLivro">Quantidade de exemplares</label><input id="quantidadeLivro" type="number" min="1" value="1" required></div></div><label for="estadoLivro">Estado de conservação</label><select id="estadoLivro" data-campo-outro="outroEstadoLivro"><option>Bom</option><option>Regular</option><option>Danificado</option><option>Outro</option></select><input class="campo-outro oculto" id="outroEstadoLivro" placeholder="Descreva o estado de conservação"><div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarItemBiblioteca">Salvar livro</button></div></form></dialog>
+  <dialog id="janelaBiblioteca" class="janela-grande"><form method="dialog" id="formularioBiblioteca"><div class="titulo-modal"><h2 id="tituloFormularioLivro">Cadastrar livro</h2><button value="cancel" aria-label="Fechar">×</button></div><div class="grade-formulario"><div><label for="codigoLivro">Código interno</label><input id="codigoLivro" placeholder="Ex.: LIV-001" required></div><div><label for="isbnLivro">ISBN</label><input id="isbnLivro" placeholder="Ex.: 9788535914849"></div></div><label for="tituloLivro">Título</label><input id="tituloLivro" required><div class="grade-formulario"><div><label for="autorLivro">Autor</label><input id="autorLivro" required></div><div><label for="editoraLivro">Editora</label><input id="editoraLivro" required></div></div><div class="grade-formulario"><div><label for="categoriaLivro">Categoria</label><select id="categoriaLivro" data-campo-outro="outraCategoriaLivro"><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Infantil</option><option>Biografia</option><option>Outro</option></select><input class="campo-outro oculto" id="outraCategoriaLivro" placeholder="Digite a categoria"></div><div><label for="anoLivro">Ano de publicação</label><input id="anoLivro" type="number" min="1000" max="2100"></div></div><div class="grade-formulario"><div><label for="localLivro">Estante/Prateleira</label><input id="localLivro" placeholder="Ex.: Estante A - P2" required></div><div><label for="quantidadeLivro">Quantidade de exemplares</label><input id="quantidadeLivro" type="number" min="1" value="1" required></div></div><p class="ajuda-estoque oculto" id="ajudaEstoque"></p><label for="estadoLivro">Estado de conservação</label><select id="estadoLivro" data-campo-outro="outroEstadoLivro"><option>Bom</option><option>Regular</option><option>Danificado</option><option>Outro</option></select><input class="campo-outro oculto" id="outroEstadoLivro" placeholder="Descreva o estado de conservação"><div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarItemBiblioteca">Salvar livro</button></div></form></dialog>
 
   <dialog id="janelaEmprestimo"><form method="dialog" id="formularioEmprestimo"><div class="titulo-modal"><h2>Registrar empréstimo</h2><button value="cancel" aria-label="Fechar">×</button></div><label for="pesquisaLeitorEmprestimo">Pesquisar leitor</label><input id="pesquisaLeitorEmprestimo" type="search" placeholder="Digite o nome ou a matrícula"><label for="leitorEmprestimo">Escolher leitor</label><select id="leitorEmprestimo" required><option value="">Selecione um leitor</option></select><p class="aviso-bloqueio oculto" id="avisoBloqueio"></p><label for="pesquisaLivroEmprestimo">Pesquisar livro</label><input id="pesquisaLivroEmprestimo" type="search" placeholder="Digite o título, autor, ISBN ou código"><label for="livroEmprestimo">Escolher livro disponível</label><select id="livroEmprestimo" required><option value="">Selecione um livro</option></select><div class="grade-formulario"><div><label for="dataEmprestimo">Data do empréstimo</label><input id="dataEmprestimo" type="date" required></div><div><label for="dataPrazo">Prazo de devolução</label><input id="dataPrazo" type="date" required></div></div><div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarEmprestimo">Confirmar empréstimo</button></div></form></dialog>
 
@@ -103,6 +109,50 @@
       <textarea id="observacaoDevolucao" rows="4" placeholder="Descreva avarias, páginas rasgadas, riscos ou outras informações"></textarea>
       <p class="explicacao-advertencia">Se o estado informado não for “Bom”, uma advertência será registrada no histórico do leitor.</p>
       <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="confirmarDevolucao">Confirmar devolução</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="janelaRenovacao">
+    <form method="dialog" id="formularioRenovacao">
+      <div class="titulo-modal"><h2>Renovar empréstimo</h2><button value="cancel" aria-label="Fechar">×</button></div>
+      <div class="resumo-devolucao" id="resumoRenovacao"></div>
+      <label for="novaDataPrazo">Novo prazo de devolução</label>
+      <input id="novaDataPrazo" type="date" required>
+      <p class="explicacao-renovacao">A nova data deve ser posterior ao prazo atual. Empréstimos atrasados não podem ser renovados.</p>
+      <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="confirmarRenovacao">Confirmar renovação</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="janelaHistoricoLeitor" class="janela-historico">
+    <div class="titulo-modal"><h2>Histórico do leitor</h2><button type="button" id="fecharHistoricoLeitor" aria-label="Fechar">×</button></div>
+    <div class="cabecalho-historico">
+      <div><h3 id="nomeHistoricoLeitor"></h3><p id="dadosHistoricoLeitor"></p></div>
+      <span class="situacao" id="situacaoHistoricoLeitor"></span>
+    </div>
+    <p class="mensagem-bloqueio-historico oculto" id="bloqueioHistoricoLeitor"></p>
+    <div class="resumo-historico">
+      <article><span>Empréstimos</span><strong id="historicoTotalEmprestimos">0</strong></article>
+      <article><span>Atrasos</span><strong id="historicoTotalAtrasos">0</strong></article>
+      <article><span>Advertências</span><strong id="historicoTotalAdvertencias">0</strong></article>
+      <article><span>Renovações</span><strong id="historicoTotalRenovacoes">0</strong></article>
+    </div>
+    <div class="vazio" id="historicoLeitorVazio"><b>Nenhum empréstimo registrado</b><span>O histórico aparecerá após o primeiro empréstimo.</span></div>
+    <div class="rolagem-tabela"><table id="tabelaHistoricoLeitor"><thead><tr><th>Livro</th><th>Empréstimo</th><th>Prazo final</th><th>Devolução</th><th>Situação</th><th>Detalhes</th></tr></thead><tbody></tbody></table></div>
+  </dialog>
+
+  <dialog id="janelaReserva">
+    <form method="dialog" id="formularioReserva">
+      <div class="titulo-modal"><h2>Reservar livro</h2><button value="cancel" aria-label="Fechar">×</button></div>
+      <label for="pesquisaLivroReserva">Pesquisar livro indisponível</label>
+      <input id="pesquisaLivroReserva" type="search" placeholder="Digite o título, autor, ISBN ou código">
+      <label for="livroReserva">Escolher livro</label>
+      <select id="livroReserva" required><option value="">Selecione um livro</option></select>
+      <label for="pesquisaLeitorReserva">Pesquisar leitor</label>
+      <input id="pesquisaLeitorReserva" type="search" placeholder="Digite o nome ou a matrícula">
+      <label for="leitorReserva">Escolher leitor</label>
+      <select id="leitorReserva" required><option value="">Selecione um leitor</option></select>
+      <p class="explicacao-renovacao">A reserva será adicionada ao final da fila. Cada leitor pode reservar o mesmo título apenas uma vez.</p>
+      <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarReserva">Confirmar reserva</button></div>
     </form>
   </dialog>
 
