@@ -29,18 +29,21 @@
   border-left: 4px solid #d88a20;
 }
 
-.ferramentas-biblioteca {
+.ferramentas-biblioteca,
+.ferramentas-leitores {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 15px;
 }
 
-.ferramentas-biblioteca .pesquisa {
+.ferramentas-biblioteca .pesquisa,
+.ferramentas-leitores .pesquisa {
   margin: 0;
 }
 
-.ferramentas-biblioteca select {
+.ferramentas-biblioteca select,
+.ferramentas-leitores select {
   padding: 9px;
   border: 1px solid var(--borda);
   border-radius: 5px;
@@ -62,6 +65,20 @@
   margin-top: 8px;
   border-color: var(--azul);
   background: #f8fbff;
+}
+
+.explicacao-cadastro {
+  margin: 12px 0 4px;
+  color: var(--cinza);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.campo-automatico {
+  background: var(--azul-claro);
+  color: var(--azul-escuro);
+  font-weight: bold;
+  cursor: not-allowed;
 }
 
 .ajuda-estoque {
@@ -270,7 +287,8 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .ferramentas-biblioteca {
+  .ferramentas-biblioteca,
+  .ferramentas-leitores {
     align-items: stretch;
     flex-direction: column;
   }

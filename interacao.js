@@ -33,6 +33,62 @@ function escaparHtml(texto) {
   return elemento.innerHTML;
 }
 
+function nomeLeitorParaExibicao(leitor) {
+  return leitor ? (leitor.nome || 'Sem nome') : 'Leitor removido';
+}
+
+function tituloLivroParaExibicao(livro) {
+  return livro ? (livro.title || 'Sem título') : 'Livro removido';
+}
+
+function normalizarPesquisa(valor) {
+  return String(valor ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-BR')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function correspondePesquisa(termo, ...valores) {
+  const consulta = normalizarPesquisa(termo);
+  if (!consulta) return true;
+  const texto = valores.map(normalizarPesquisa).filter(Boolean).join(' ');
+  const partesEncontradas = consulta.split(' ').every(parte => texto.includes(parte));
+  if (partesEncontradas) return true;
+  return texto.replace(/\s/g, '').includes(consulta.replace(/\s/g, ''));
+}
+
+function livroCorrespondePesquisa(livro, termo) {
+  return correspondePesquisa(termo,
+    livro.code,
+    livro.title || 'Sem título',
+    livro.author || 'Autor não informado',
+    livro.publisher || 'Editora não informada',
+    livro.category || 'Categoria não informada',
+    livro.isbn,
+    livro.year,
+    livro.location || 'Local não informado',
+    livro.condition || 'Estado não informado',
+    livro.quantity,
+    livro.available,
+    livro.lostCopies
+  );
+}
+
+function leitorCorrespondePesquisa(leitor, termo) {
+  const bloqueio = obterBloqueio(leitor.id);
+  return correspondePesquisa(termo,
+    leitor.nome || 'Sem nome',
+    leitor.matricula,
+    leitor.tipo || 'Tipo não informado',
+    leitor.turma || 'Turma ou setor não informado',
+    bloqueio.bloqueado ? 'Bloqueado' : 'Liberado',
+    contarAdvertencias(leitor.id)
+  );
+}
+
 function dataLocal(data = new Date()) {
   const ano = data.getFullYear();
   const mes = String(data.getMonth() + 1).padStart(2, '0');
@@ -55,6 +111,56 @@ function salvarDados() {
   localStorage.setItem('ds_reservations', JSON.stringify(reservas));
 }
 
+function gerarIdTecnico(colecao) {
+  const idsUsados = new Set(colecao.map(item => Number(item.id)));
+  let id = Date.now();
+  while (idsUsados.has(id)) id += 1;
+  return id;
+}
+
+function gerarIdentificador(prefixo, colecao, campo) {
+  const formatoAutomatico = new RegExp(`^${prefixo}-(\\d+)$`, 'i');
+  const identificadoresUsados = new Set();
+  let maiorNumero = 0;
+
+  colecao.forEach(item => {
+    const identificador = String(item[campo] ?? '').trim();
+    if (!identificador) return;
+    identificadoresUsados.add(identificador.toLowerCase());
+    const resultado = identificador.match(formatoAutomatico);
+    if (resultado) maiorNumero = Math.max(maiorNumero, Number(resultado[1]));
+  });
+
+  let numero = maiorNumero + 1;
+  let identificador;
+  do {
+    identificador = `${prefixo}-${String(numero).padStart(4, '0')}`;
+    numero += 1;
+  } while (identificadoresUsados.has(identificador.toLowerCase()));
+  return identificador;
+}
+
+const gerarIdLeitor = () => gerarIdentificador('ALU', leitores, 'matricula');
+const gerarIdLivro = () => gerarIdentificador('LIV', livros, 'code');
+
+// Mantém os dados antigos e completa apenas identificadores que ainda não existiam.
+function completarIdentificadoresAusentes() {
+  let alterado = false;
+  leitores.forEach(leitor => {
+    if (String(leitor.matricula ?? '').trim()) return;
+    leitor.matricula = gerarIdLeitor();
+    alterado = true;
+  });
+  livros.forEach(livro => {
+    if (String(livro.code ?? '').trim()) return;
+    livro.code = gerarIdLivro();
+    alterado = true;
+  });
+  if (alterado) salvarDados();
+}
+
+completarIdentificadoresAusentes();
+
 // Mostra um campo de texto quando uma opção "Outro" é escolhida.
 $$('[data-campo-outro]').forEach(seletor => {
   seletor.addEventListener('change', () => atualizarCampoOutro(seletor));
@@ -64,7 +170,7 @@ function atualizarCampoOutro(seletor) {
   const campo = $(`#${seletor.dataset.campoOutro}`);
   const mostrar = seletor.value === 'Outro';
   campo.classList.toggle('oculto', !mostrar);
-  campo.required = mostrar;
+  campo.required = mostrar && seletor.id === 'estadoDevolucao';
   if (!mostrar) campo.value = '';
 }
 
@@ -121,12 +227,23 @@ $$('.item-navegacao').forEach(item => item.addEventListener('click', () => abrir
 $$('[data-go]').forEach(item => item.addEventListener('click', () => abrirPagina(item.dataset.go)));
 $('#menuCelular').addEventListener('click', () => $('#barra-lateral').classList.toggle('aberto'));
 
-$('#abrirLeitor').addEventListener('click', () => $('#janelaLeitor').showModal());
+$('#abrirLeitor').addEventListener('click', abrirFormularioLeitor);
 $('#abrirItemBiblioteca').addEventListener('click', () => abrirFormularioLivro());
 $('#abrirReserva').addEventListener('click', () => abrirFormularioReserva());
 
+function abrirFormularioLeitor() {
+  $('#formularioLeitor').reset();
+  limparCamposOutro($('#formularioLeitor'));
+  $('#matriculaLeitor').value = gerarIdLeitor();
+  $('#janelaLeitor').showModal();
+}
+
 function reservasAtivasDoLivro(livroId) {
   return reservas.filter(item => item.bookId === livroId && item.status === 'ativa').sort((a, b) => a.id - b.id);
+}
+
+function livroPossuiReservaAtiva(livroId) {
+  return reservasAtivasDoLivro(livroId).length > 0;
 }
 
 function livroPodeSerReservado(livro) {
@@ -134,11 +251,13 @@ function livroPodeSerReservado(livro) {
 }
 
 function preencherLivrosReserva(lista) {
-  $('#livroReserva').innerHTML = '<option value="">Selecione um livro</option>' + lista.map(livro => `<option value="${livro.id}">${escaparHtml(livro.title)} - ${escaparHtml(livro.author)}</option>`).join('');
+  const primeiraOpcao = lista.length ? 'Selecione um livro' : 'Nenhum livro reservável encontrado';
+  $('#livroReserva').innerHTML = `<option value="">${primeiraOpcao}</option>` + lista.map(livro => `<option value="${livro.id}">${escaparHtml(livro.title || 'Sem título')} - ${escaparHtml(livro.author || 'Autor não informado')}</option>`).join('');
 }
 
 function preencherLeitoresReserva(lista) {
-  $('#leitorReserva').innerHTML = '<option value="">Selecione um leitor</option>' + lista.map(leitor => `<option value="${leitor.id}">${escaparHtml(leitor.nome)} - ${escaparHtml(leitor.matricula || 'sem matrícula')}</option>`).join('');
+  const primeiraOpcao = lista.length ? 'Selecione um leitor' : 'Nenhum leitor encontrado';
+  $('#leitorReserva').innerHTML = `<option value="">${primeiraOpcao}</option>` + lista.map(leitor => `<option value="${leitor.id}">${escaparHtml(leitor.nome || 'Sem nome')} - ${escaparHtml(leitor.matricula)}</option>`).join('');
 }
 
 function abrirFormularioReserva(livroId = '') {
@@ -153,13 +272,13 @@ function abrirFormularioReserva(livroId = '') {
 }
 
 $('#pesquisaLivroReserva').addEventListener('input', evento => {
-  const termo = evento.target.value.toLowerCase();
-  preencherLivrosReserva(livros.filter(livro => livroPodeSerReservado(livro) && `${livro.title} ${livro.author} ${livro.isbn || ''} ${livro.code}`.toLowerCase().includes(termo)));
+  const termo = evento.target.value;
+  preencherLivrosReserva(livros.filter(livro => livroPodeSerReservado(livro) && livroCorrespondePesquisa(livro, termo)));
 });
 
 $('#pesquisaLeitorReserva').addEventListener('input', evento => {
-  const termo = evento.target.value.toLowerCase();
-  preencherLeitoresReserva(leitores.filter(leitor => `${leitor.nome} ${leitor.matricula} ${leitor.turma}`.toLowerCase().includes(termo)));
+  const termo = evento.target.value;
+  preencherLeitoresReserva(leitores.filter(leitor => leitorCorrespondePesquisa(leitor, termo)));
 });
 
 $('#salvarReserva').addEventListener('click', evento => {
@@ -177,10 +296,12 @@ $('#salvarReserva').addEventListener('click', evento => {
 
 function definirOpcaoOuOutro(idSeletor, valor) {
   const seletor = $(`#${idSeletor}`);
-  const existe = [...seletor.options].some(opcao => opcao.value === valor);
-  seletor.value = existe ? valor : 'Outro';
+  const valorTexto = String(valor ?? '').trim();
+  const normalizar = idSeletor === 'categoriaLivro' ? normalizarCategoria : texto => texto;
+  const opcaoExistente = [...seletor.options].find(opcao => opcao.value !== 'Outro' && normalizar(opcao.value) === normalizar(valorTexto));
+  seletor.value = opcaoExistente ? opcaoExistente.value : 'Outro';
   atualizarCampoOutro(seletor);
-  if (!existe) $(`#${seletor.dataset.campoOutro}`).value = valor || '';
+  if (!opcaoExistente) $(`#${seletor.dataset.campoOutro}`).value = valorTexto;
 }
 
 function abrirFormularioLivro(livroId = null) {
@@ -205,6 +326,7 @@ function abrirFormularioLivro(livroId = null) {
     $('#quantidadeLivro').min = Math.max(1, indisponiveis);
     $('#ajudaEstoque').textContent = `${indisponiveis} exemplar(es) estão emprestados ou perdidos. A quantidade total não pode ser menor que esse número.`;
   } else {
+    $('#codigoLivro').value = gerarIdLivro();
     $('#quantidadeLivro').min = 1;
     $('#quantidadeLivro').value = 1;
   }
@@ -214,25 +336,30 @@ function abrirFormularioLivro(livroId = null) {
 $('#salvarLeitor').addEventListener('click', evento => {
   evento.preventDefault();
   if (!$('#formularioLeitor').reportValidity()) return;
-  const matricula = $('#matriculaLeitor').value.trim();
-  if (leitores.some(leitor => leitor.matricula.toLowerCase() === matricula.toLowerCase())) return mostrarAviso('Já existe um leitor com essa matrícula.');
-  leitores.push({ id: Date.now(), nome: $('#nomeLeitor').value.trim(), matricula, tipo: valorComOutro('tipoLeitor'), turma: $('#turmaLeitor').value.trim() });
+  const idExibido = $('#matriculaLeitor').value.trim();
+  const idDisponivel = /^ALU-\d+$/i.test(idExibido) && !leitores.some(leitor => String(leitor.matricula ?? '').toLowerCase() === idExibido.toLowerCase());
+  const matricula = idDisponivel ? idExibido : gerarIdLeitor();
+  leitores.push({ id: gerarIdTecnico(leitores), nome: $('#nomeLeitor').value.trim(), matricula, tipo: valorComOutro('tipoLeitor'), turma: $('#turmaLeitor').value.trim() });
   salvarDados();
   $('#formularioLeitor').reset();
   limparCamposOutro($('#formularioLeitor'));
   $('#janelaLeitor').close();
   renderizarTudo();
-  mostrarAviso('Leitor cadastrado com sucesso.');
+  mostrarAviso(`Leitor cadastrado com o ID ${matricula}.`);
 });
 
 $('#salvarItemBiblioteca').addEventListener('click', evento => {
   evento.preventDefault();
   if (!$('#formularioBiblioteca').reportValidity()) return;
-  const codigo = $('#codigoLivro').value.trim();
+  const idExibido = $('#codigoLivro').value.trim();
+  const idDisponivel = /^LIV-\d+$/i.test(idExibido) && !livros.some(livro => livro.id !== livroEmEdicao?.id && String(livro.code ?? '').toLowerCase() === idExibido.toLowerCase());
+  const codigo = livroEmEdicao ? String(livroEmEdicao.code ?? '').trim() : (idDisponivel ? idExibido : gerarIdLivro());
   const isbn = $('#isbnLivro').value.trim();
-  if (livros.some(livro => livro.id !== livroEmEdicao?.id && livro.code.toLowerCase() === codigo.toLowerCase())) return mostrarAviso('Já existe um livro com esse código.');
+  if (livros.some(livro => livro.id !== livroEmEdicao?.id && String(livro.code ?? '').toLowerCase() === codigo.toLowerCase())) return mostrarAviso('Já existe um livro com esse ID.');
   if (isbn && livros.some(livro => livro.id !== livroEmEdicao?.id && livro.isbn === isbn)) return mostrarAviso('Já existe um livro com esse ISBN.');
-  const quantidade = Number($('#quantidadeLivro').value);
+  const quantidadeInformada = Number($('#quantidadeLivro').value);
+  const quantidadePadrao = livroEmEdicao ? Math.max(1, Number(livroEmEdicao.quantity) || 1) : 1;
+  const quantidade = $('#quantidadeLivro').value && Number.isInteger(quantidadeInformada) ? quantidadeInformada : quantidadePadrao;
   const dadosLivro = {
     code: codigo, isbn, title: $('#tituloLivro').value.trim(), author: $('#autorLivro').value.trim(),
     publisher: $('#editoraLivro').value.trim(), year: $('#anoLivro').value, category: valorComOutro('categoriaLivro'),
@@ -244,7 +371,7 @@ $('#salvarItemBiblioteca').addEventListener('click', evento => {
     if (quantidade < indisponiveis) return mostrarAviso(`A quantidade não pode ser menor que ${indisponiveis}.`);
     Object.assign(livroEmEdicao, dadosLivro, { available: quantidade - indisponiveis });
   } else {
-    livros.push({ id: Date.now(), ...dadosLivro, available: quantidade, lostCopies: 0 });
+    livros.push({ id: gerarIdTecnico(livros), ...dadosLivro, available: quantidade, lostCopies: 0 });
   }
   salvarDados();
   $('#formularioBiblioteca').reset();
@@ -252,7 +379,7 @@ $('#salvarItemBiblioteca').addEventListener('click', evento => {
   $('#quantidadeLivro').value = 1;
   $('#janelaBiblioteca').close();
   renderizarTudo();
-  mostrarAviso(editando ? 'Livro e estoque atualizados.' : 'Livro cadastrado no estoque.');
+  mostrarAviso(editando ? 'Livro e estoque atualizados.' : `Livro cadastrado com o ID ${codigo}.`);
   livroEmEdicao = null;
 });
 
@@ -284,12 +411,14 @@ function prepararEmprestimo(leitorSelecionado = '') {
 }
 
 function preencherOpcoesLeitores(lista, leitorSelecionado = '') {
-  $('#leitorEmprestimo').innerHTML = '<option value="">Selecione um leitor</option>' + lista.map(leitor => `<option value="${leitor.id}">${escaparHtml(leitor.nome)} - ${escaparHtml(leitor.matricula || 'sem matrícula')}</option>`).join('');
+  const primeiraOpcao = lista.length ? 'Selecione um leitor' : 'Nenhum leitor encontrado';
+  $('#leitorEmprestimo').innerHTML = `<option value="">${primeiraOpcao}</option>` + lista.map(leitor => `<option value="${leitor.id}">${escaparHtml(leitor.nome || 'Sem nome')} - ${escaparHtml(leitor.matricula)}</option>`).join('');
   $('#leitorEmprestimo').value = leitorSelecionado;
 }
 
 function preencherOpcoesLivros(lista, livroSelecionado = '') {
-  $('#livroEmprestimo').innerHTML = '<option value="">Selecione um livro</option>' + lista.map(livro => `<option value="${livro.id}">${escaparHtml(livro.title)} - ${escaparHtml(livro.author)} (${livro.available} disponível/is)</option>`).join('');
+  const primeiraOpcao = lista.length ? 'Selecione um livro' : 'Nenhum livro disponível encontrado';
+  $('#livroEmprestimo').innerHTML = `<option value="">${primeiraOpcao}</option>` + lista.map(livro => `<option value="${livro.id}">${escaparHtml(livro.title || 'Sem título')} - ${escaparHtml(livro.author || 'Autor não informado')} (${livro.available} disponível/is)</option>`).join('');
   $('#livroEmprestimo').value = livroSelecionado;
 }
 
@@ -312,17 +441,17 @@ function verificarLeitorSelecionado() {
 
 $('#leitorEmprestimo').addEventListener('change', verificarLeitorSelecionado);
 $('#pesquisaLeitorEmprestimo').addEventListener('input', evento => {
-  const termo = evento.target.value.trim().toLowerCase();
+  const termo = evento.target.value;
   const selecionado = $('#leitorEmprestimo').value;
-  const encontrados = leitores.filter(leitor => `${leitor.nome} ${leitor.matricula} ${leitor.turma}`.toLowerCase().includes(termo));
+  const encontrados = leitores.filter(leitor => leitorCorrespondePesquisa(leitor, termo));
   preencherOpcoesLeitores(encontrados, selecionado);
   verificarLeitorSelecionado();
 });
 
 $('#pesquisaLivroEmprestimo').addEventListener('input', evento => {
-  const termo = evento.target.value.trim().toLowerCase();
+  const termo = evento.target.value;
   const selecionado = $('#livroEmprestimo').value;
-  const encontrados = livros.filter(livro => Number(livro.available) > 0 && `${livro.title} ${livro.author} ${livro.isbn || ''} ${livro.code}`.toLowerCase().includes(termo));
+  const encontrados = livros.filter(livro => Number(livro.available) > 0 && livroCorrespondePesquisa(livro, termo));
   preencherOpcoesLivros(encontrados, selecionado);
 });
 
@@ -336,7 +465,7 @@ $('#salvarEmprestimo').addEventListener('click', evento => {
   const fila = reservasAtivasDoLivro(livroId);
   if (fila.length && fila[0].readerId !== leitorId) {
     const primeiro = leitores.find(item => item.id === fila[0].readerId);
-    return mostrarAviso(`Este exemplar está reservado para ${primeiro?.nome || 'o primeiro leitor da fila'}.`);
+    return mostrarAviso(`Este exemplar está reservado para ${primeiro ? nomeLeitorParaExibicao(primeiro) : 'o primeiro leitor da fila'}.`);
   }
   if (lerData($('#dataPrazo').value) < lerData($('#dataEmprestimo').value)) return mostrarAviso('O prazo deve ser posterior ao empréstimo.');
   const livro = livros.find(item => item.id === livroId);
@@ -360,7 +489,7 @@ function abrirFormularioDevolucao(emprestimoId) {
   $('#formularioDevolucao').reset();
   limparCamposOutro($('#formularioDevolucao'));
   atualizarRegraAdvertencia();
-  $('#resumoDevolucao').innerHTML = `<b>${escaparHtml(livro?.title || 'Livro removido')}</b><span>Emprestado para ${escaparHtml(leitor?.nome || 'Leitor removido')}</span><span>Prazo: ${formatarData(emprestimo.dueDate)}</span>`;
+  $('#resumoDevolucao').innerHTML = `<b>${escaparHtml(tituloLivroParaExibicao(livro))}</b><span>Emprestado para ${escaparHtml(nomeLeitorParaExibicao(leitor))}</span><span>Prazo: ${formatarData(emprestimo.dueDate)}</span>`;
   $('#janelaDevolucao').showModal();
 }
 
@@ -425,12 +554,13 @@ function abrirFormularioRenovacao(emprestimoId) {
   const emprestimo = emprestimos.find(item => item.id === emprestimoId);
   if (!emprestimo || emprestimo.returnDate) return;
   if (situacaoEmprestimo(emprestimo).classe === 'atrasado') return mostrarAviso('Empréstimos atrasados não podem ser renovados.');
+  if (livroPossuiReservaAtiva(emprestimo.bookId)) return mostrarAviso('Este livro possui uma reserva ativa e não pode ser renovado.');
   const bloqueio = obterBloqueio(emprestimo.readerId);
   if (bloqueio.bloqueado) return mostrarAviso(bloqueio.mensagem);
   const leitor = leitores.find(item => item.id === emprestimo.readerId);
   const livro = livros.find(item => item.id === emprestimo.bookId);
   emprestimoEmRenovacao = emprestimoId;
-  $('#resumoRenovacao').innerHTML = `<b>${escaparHtml(livro?.title || 'Livro removido')}</b><span>Leitor: ${escaparHtml(leitor?.nome || 'Leitor removido')}</span><span>Prazo atual: ${formatarData(emprestimo.dueDate)}</span><span>Renovações realizadas: ${emprestimo.renewals?.length || 0}</span>`;
+  $('#resumoRenovacao').innerHTML = `<b>${escaparHtml(tituloLivroParaExibicao(livro))}</b><span>Leitor: ${escaparHtml(nomeLeitorParaExibicao(leitor))}</span><span>Prazo atual: ${formatarData(emprestimo.dueDate)}</span><span>Renovações realizadas: ${emprestimo.renewals?.length || 0}</span>`;
   const prazoSugerido = lerData(emprestimo.dueDate);
   prazoSugerido.setDate(prazoSugerido.getDate() + 7);
   $('#novaDataPrazo').min = dataLocal(new Date(lerData(emprestimo.dueDate).getTime() + 86400000));
@@ -444,6 +574,7 @@ $('#confirmarRenovacao').addEventListener('click', evento => {
   const emprestimo = emprestimos.find(item => item.id === emprestimoEmRenovacao);
   if (!emprestimo || emprestimo.returnDate) return mostrarAviso('Este empréstimo não está mais ativo.');
   if (situacaoEmprestimo(emprestimo).classe === 'atrasado') return mostrarAviso('Empréstimos atrasados não podem ser renovados.');
+  if (livroPossuiReservaAtiva(emprestimo.bookId)) return mostrarAviso('Este livro possui uma reserva ativa e não pode ser renovado.');
   const novoPrazo = $('#novaDataPrazo').value;
   if (lerData(novoPrazo) <= lerData(emprestimo.dueDate)) return mostrarAviso('O novo prazo deve ser posterior ao prazo atual.');
   if (!Array.isArray(emprestimo.renewals)) emprestimo.renewals = [];
@@ -461,9 +592,13 @@ function renderizarBiblioteca(lista = livros) {
   $('#exemplaresBiblioteca').textContent = livros.reduce((total, livro) => total + Number(livro.quantity || 0), 0);
   $('#bibliotecaDisponiveis').textContent = livros.reduce((total, livro) => total + Number(livro.available || 0), 0);
   $('#estoqueBaixoBiblioteca').textContent = livros.filter(livro => Number(livro.available) === 0).length;
-  $('#bibliotecaVazia').style.display = lista.length ? 'none' : 'flex';
+  const bibliotecaVazia = $('#bibliotecaVazia');
+  const filtroAtivo = Boolean($('#pesquisaBiblioteca').value.trim() || $('#filtroCategoriaBiblioteca').value);
+  bibliotecaVazia.querySelector('b').textContent = livros.length && filtroAtivo ? 'Nenhum livro encontrado' : 'Nenhum livro cadastrado';
+  bibliotecaVazia.querySelector('span').textContent = livros.length && filtroAtivo ? 'Tente pesquisar outro termo ou alterar a categoria.' : 'Cadastre o primeiro livro do Estoque.';
+  bibliotecaVazia.style.display = lista.length ? 'none' : 'flex';
   $('#tabelaBiblioteca').style.display = lista.length ? 'table' : 'none';
-  $('#tabelaBiblioteca tbody').innerHTML = lista.map(livro => `<tr><td>${escaparHtml(livro.code)}</td><td><b>${escaparHtml(livro.title)}</b><small class="detalhe-livro">${escaparHtml(livro.publisher || '')} ${livro.year || ''}${Number(livro.lostCopies || 0) ? ` • ${livro.lostCopies} perdido(s)` : ''}</small></td><td>${escaparHtml(livro.author)}</td><td>${escaparHtml(livro.isbn || '—')}</td><td>${escaparHtml(livro.location || 'Não informado')}</td><td>${livro.quantity}</td><td><b class="${Number(livro.available) === 0 ? 'estoque-baixo' : ''}">${livro.available}</b></td><td>${escaparHtml(livro.condition)}</td><td><div class="acoes-emprestimo"><button class="botao-pequeno editar-livro" data-id="${livro.id}">Editar</button>${livroPodeSerReservado(livro) ? `<button class="botao-pequeno reservar-livro" data-id="${livro.id}">Reservar</button>` : ''}</div></td></tr>`).join('');
+  $('#tabelaBiblioteca tbody').innerHTML = lista.map(livro => `<tr><td>${escaparHtml(livro.code)}</td><td><b>${escaparHtml(livro.title || 'Sem título')}</b><small class="detalhe-livro">${escaparHtml(livro.publisher || '')} ${livro.year || ''}${Number(livro.lostCopies || 0) ? ` • ${livro.lostCopies} perdido(s)` : ''}</small></td><td>${escaparHtml(livro.author || 'Não informado')}</td><td>${escaparHtml(livro.category || 'Não informada')}</td><td>${escaparHtml(livro.isbn || '—')}</td><td>${escaparHtml(livro.location || 'Não informado')}</td><td>${livro.quantity}</td><td><b class="${Number(livro.available) === 0 ? 'estoque-baixo' : ''}">${livro.available}</b></td><td>${escaparHtml(livro.condition || 'Não informado')}</td><td><div class="acoes-emprestimo"><button class="botao-pequeno editar-livro" data-id="${livro.id}">Editar</button>${livroPodeSerReservado(livro) ? `<button class="botao-pequeno reservar-livro" data-id="${livro.id}">Reservar</button>` : ''}</div></td></tr>`).join('');
   $$('.editar-livro').forEach(botao => botao.addEventListener('click', () => abrirFormularioLivro(botao.dataset.id)));
   $$('.reservar-livro').forEach(botao => botao.addEventListener('click', () => abrirFormularioReserva(botao.dataset.id)));
 }
@@ -497,19 +632,23 @@ function renderizarReservas() {
     const fila = reservasAtivasDoLivro(reserva.bookId);
     const posicao = fila.findIndex(item => item.id === reserva.id) + 1;
     const pronta = posicao === 1 && Number(livro?.available || 0) > 0;
-    return `<tr><td><b>${posicao}º</b></td><td>${escaparHtml(livro?.title || 'Livro removido')}</td><td>${escaparHtml(leitor?.nome || 'Leitor removido')}</td><td>${formatarData(reserva.date)}</td><td><span class="situacao ${pronta ? 'devolvido' : 'andamento'}">${pronta ? 'Disponível para retirada' : 'Aguardando'}</span></td><td><div class="acoes-emprestimo">${pronta ? `<button class="botao-pequeno emprestar-reserva" data-id="${reserva.id}">Emprestar</button>` : ''}<button class="botao-pequeno cancelar-reserva" data-id="${reserva.id}">Cancelar</button></div></td></tr>`;
+    return `<tr><td><b>${posicao}º</b></td><td>${escaparHtml(tituloLivroParaExibicao(livro))}</td><td>${escaparHtml(nomeLeitorParaExibicao(leitor))}</td><td>${formatarData(reserva.date)}</td><td><span class="situacao ${pronta ? 'devolvido' : 'andamento'}">${pronta ? 'Disponível para retirada' : 'Aguardando'}</span></td><td><div class="acoes-emprestimo">${pronta ? `<button class="botao-pequeno emprestar-reserva" data-id="${reserva.id}">Emprestar</button>` : ''}<button class="botao-pequeno cancelar-reserva" data-id="${reserva.id}">Cancelar</button></div></td></tr>`;
   }).join('');
   $$('.cancelar-reserva').forEach(botao => botao.addEventListener('click', () => cancelarReserva(Number(botao.dataset.id))));
   $$('.emprestar-reserva').forEach(botao => botao.addEventListener('click', () => emprestarReserva(Number(botao.dataset.id))));
 }
 
 function renderizarLeitores(lista = leitores) {
-  $('#leitoresVazios').style.display = lista.length ? 'none' : 'flex';
+  const leitoresVazios = $('#leitoresVazios');
+  const filtroAtivo = Boolean($('#pesquisaLeitor').value.trim() || $('#filtroSituacaoLeitor').value);
+  leitoresVazios.querySelector('b').textContent = leitores.length && filtroAtivo ? 'Nenhum leitor encontrado' : 'Nenhum leitor cadastrado';
+  leitoresVazios.querySelector('span').textContent = leitores.length && filtroAtivo ? 'Tente alterar a pesquisa ou o filtro de situação.' : 'Cadastre o primeiro leitor da biblioteca.';
+  leitoresVazios.style.display = lista.length ? 'none' : 'flex';
   $('#tabelaLeitores').style.display = lista.length ? 'table' : 'none';
   $('#tabelaLeitores tbody').innerHTML = lista.map(leitor => {
     const bloqueio = obterBloqueio(leitor.id);
     const advertencias = contarAdvertencias(leitor.id);
-    return `<tr><td>${escaparHtml(leitor.nome)}</td><td>${escaparHtml(leitor.matricula || 'Não informada')}</td><td>${escaparHtml(leitor.tipo)}</td><td>${escaparHtml(leitor.turma)}</td><td><span class="contador-advertencias ${advertencias ? 'possui' : ''}">${advertencias}</span></td><td><span class="situacao ${bloqueio.bloqueado ? 'atrasado' : ''}">${bloqueio.bloqueado ? 'Bloqueado' : 'Liberado'}</span></td><td><div class="acoes-emprestimo"><button class="botao-pequeno ver-historico-leitor" data-id="${leitor.id}">Histórico</button><button class="botao-pequeno emprestar-leitor" data-id="${leitor.id}" ${bloqueio.bloqueado ? 'disabled' : ''}>Emprestar</button></div></td></tr>`;
+    return `<tr><td>${escaparHtml(leitor.nome || 'Sem nome')}</td><td>${escaparHtml(leitor.matricula)}</td><td>${escaparHtml(leitor.tipo || 'Não informado')}</td><td>${escaparHtml(leitor.turma || 'Não informada')}</td><td><span class="contador-advertencias ${advertencias ? 'possui' : ''}">${advertencias}</span></td><td><span class="situacao ${bloqueio.bloqueado ? 'atrasado' : ''}">${bloqueio.bloqueado ? 'Bloqueado' : 'Liberado'}</span></td><td><div class="acoes-emprestimo"><button class="botao-pequeno ver-historico-leitor" data-id="${leitor.id}">Histórico</button><button class="botao-pequeno emprestar-leitor" data-id="${leitor.id}" ${bloqueio.bloqueado ? 'disabled' : ''}>Emprestar</button></div></td></tr>`;
   }).join('');
   $$('.emprestar-leitor').forEach(botao => botao.addEventListener('click', () => prepararEmprestimo(botao.dataset.id)));
   $$('.ver-historico-leitor').forEach(botao => botao.addEventListener('click', () => abrirHistoricoLeitor(Number(botao.dataset.id))));
@@ -521,8 +660,8 @@ function abrirHistoricoLeitor(leitorId) {
   const historico = emprestimos.filter(item => item.readerId === leitorId).sort((a, b) => lerData(b.loanDate) - lerData(a.loanDate));
   const bloqueio = obterBloqueio(leitorId);
   const renovacoes = historico.reduce((total, item) => total + (item.renewals?.length || 0), 0);
-  $('#nomeHistoricoLeitor').textContent = leitor.nome;
-  $('#dadosHistoricoLeitor').textContent = `${leitor.tipo} • ${leitor.matricula || 'Sem matrícula'} • ${leitor.turma}`;
+  $('#nomeHistoricoLeitor').textContent = nomeLeitorParaExibicao(leitor);
+  $('#dadosHistoricoLeitor').textContent = `${leitor.tipo || 'Tipo não informado'} • ${leitor.matricula} • ${leitor.turma || 'Turma/setor não informado'}`;
   $('#situacaoHistoricoLeitor').textContent = bloqueio.bloqueado ? 'Bloqueado' : 'Liberado';
   $('#situacaoHistoricoLeitor').className = `situacao ${bloqueio.bloqueado ? 'atrasado' : ''}`;
   $('#bloqueioHistoricoLeitor').textContent = bloqueio.mensagem;
@@ -541,7 +680,7 @@ function abrirHistoricoLeitor(leitorId) {
     if (item.warning) detalhes.push(`Advertência: ${item.returnCondition}`);
     if (item.returnNote) detalhes.push(item.returnNote);
     if (item.penaltyUntil) detalhes.push(`Bloqueio até ${formatarData(item.penaltyUntil)}`);
-    return `<tr><td>${escaparHtml(livro?.title || 'Livro removido')}</td><td>${formatarData(item.loanDate)}</td><td>${formatarData(item.dueDate)}</td><td>${formatarData(item.returnDate)}</td><td><span class="situacao ${situacao.classe}">${situacao.texto}</span></td><td>${escaparHtml(detalhes.join(' • ') || 'Sem observações')}</td></tr>`;
+    return `<tr><td>${escaparHtml(tituloLivroParaExibicao(livro))}</td><td>${formatarData(item.loanDate)}</td><td>${formatarData(item.dueDate)}</td><td>${formatarData(item.returnDate)}</td><td><span class="situacao ${situacao.classe}">${situacao.texto}</span></td><td>${escaparHtml(detalhes.join(' • ') || 'Sem observações')}</td></tr>`;
   }).join('');
   $('#janelaHistoricoLeitor').showModal();
 }
@@ -566,9 +705,11 @@ function renderizarEmprestimos() {
     const leitor = leitores.find(valor => valor.id === item.readerId);
     const livro = livros.find(valor => valor.id === item.bookId);
     const situacao = situacaoEmprestimo(item);
-    const podeRenovar = situacao.classe !== 'atrasado';
-    const resultado = item.returnDate ? (item.warning ? `Advertência: ${escaparHtml(item.returnCondition)}` : (item.penaltyUntil ? `Bloqueio até ${formatarData(item.penaltyUntil)}` : 'Concluído')) : `<div class="acoes-emprestimo"><button class="botao-pequeno renovar-emprestimo" data-id="${item.id}" ${podeRenovar ? '' : 'disabled'}>Renovar</button><button class="botao-pequeno devolver-livro" data-id="${item.id}">Devolver</button></div>`;
-    return `<tr><td>${escaparHtml(leitor?.nome || 'Leitor removido')}</td><td>${escaparHtml(livro?.title || 'Livro removido')}</td><td>${formatarData(item.loanDate)}</td><td>${formatarData(item.dueDate)}</td><td>${formatarData(item.returnDate)}</td><td><span class="situacao ${situacao.classe}">${situacao.texto}</span></td><td>${resultado}</td></tr>`;
+    const possuiReservaAtiva = livroPossuiReservaAtiva(item.bookId);
+    const podeRenovar = situacao.classe !== 'atrasado' && !possuiReservaAtiva;
+    const motivoBloqueioRenovacao = possuiReservaAtiva ? 'Livro com reserva ativa' : 'Empréstimo atrasado';
+    const resultado = item.returnDate ? (item.warning ? `Advertência: ${escaparHtml(item.returnCondition)}` : (item.penaltyUntil ? `Bloqueio até ${formatarData(item.penaltyUntil)}` : 'Concluído')) : `<div class="acoes-emprestimo"><button class="botao-pequeno renovar-emprestimo" data-id="${item.id}" ${podeRenovar ? '' : `disabled title="${motivoBloqueioRenovacao}"`}>Renovar</button><button class="botao-pequeno devolver-livro" data-id="${item.id}">Devolver</button></div>`;
+    return `<tr><td>${escaparHtml(nomeLeitorParaExibicao(leitor))}</td><td>${escaparHtml(tituloLivroParaExibicao(livro))}</td><td>${formatarData(item.loanDate)}</td><td>${formatarData(item.dueDate)}</td><td>${formatarData(item.returnDate)}</td><td><span class="situacao ${situacao.classe}">${situacao.texto}</span></td><td>${resultado}</td></tr>`;
   }).join('');
   $$('.devolver-livro').forEach(botao => botao.addEventListener('click', () => abrirFormularioDevolucao(Number(botao.dataset.id))));
   $$('.renovar-emprestimo').forEach(botao => botao.addEventListener('click', () => abrirFormularioRenovacao(Number(botao.dataset.id))));
@@ -585,9 +726,9 @@ function renderizarPainel() {
   $('#quantidadeNotificacoes').textContent = atrasados.length;
   const proximos = [...ativos].sort((a, b) => lerData(a.dueDate) - lerData(b.dueDate)).slice(0, 5);
   $('#proximasVazias').style.display = proximos.length ? 'none' : 'flex';
-  $('#listaProximas').innerHTML = proximos.map(item => { const leitor = leitores.find(v => v.id === item.readerId); const livro = livros.find(v => v.id === item.bookId); const status = situacaoEmprestimo(item); return `<div class="linha-aluno"><div><h3>${escaparHtml(livro?.title || 'Livro')}</h3><p>${escaparHtml(leitor?.nome || 'Leitor')} • prazo ${formatarData(item.dueDate)}</p></div><span class="situacao ${status.classe}">${status.texto}</span></div>`; }).join('');
+  $('#listaProximas').innerHTML = proximos.map(item => { const leitor = leitores.find(v => v.id === item.readerId); const livro = livros.find(v => v.id === item.bookId); const status = situacaoEmprestimo(item); return `<div class="linha-aluno"><div><h3>${escaparHtml(tituloLivroParaExibicao(livro))}</h3><p>${escaparHtml(nomeLeitorParaExibicao(leitor))} • prazo ${formatarData(item.dueDate)}</p></div><span class="situacao ${status.classe}">${status.texto}</span></div>`; }).join('');
   $('#bloqueadosVazios').style.display = bloqueados.length ? 'none' : 'flex';
-  $('#listaBloqueados').innerHTML = bloqueados.map(leitor => `<div class="linha-aluno"><div><h3>${escaparHtml(leitor.nome)}</h3><p>${escaparHtml(obterBloqueio(leitor.id).mensagem)}</p></div><span class="situacao atrasado">Bloqueado</span></div>`).join('');
+  $('#listaBloqueados').innerHTML = bloqueados.map(leitor => `<div class="linha-aluno"><div><h3>${escaparHtml(nomeLeitorParaExibicao(leitor))}</h3><p>${escaparHtml(obterBloqueio(leitor.id).mensagem)}</p></div><span class="situacao atrasado">Bloqueado</span></div>`).join('');
 }
 
 function renderizarRelatorio() {
@@ -601,8 +742,8 @@ function renderizarRelatorio() {
 }
 
 function renderizarTudo() {
-  renderizarBiblioteca();
-  renderizarLeitores();
+  filtrarBiblioteca();
+  filtrarLeitores();
   renderizarEmprestimos();
   renderizarReservas();
   renderizarPainel();
@@ -611,16 +752,56 @@ function renderizarTudo() {
 
 $('#pesquisaBiblioteca').addEventListener('input', filtrarBiblioteca);
 $('#filtroCategoriaBiblioteca').addEventListener('change', filtrarBiblioteca);
-function filtrarBiblioteca() {
-  const termo = $('#pesquisaBiblioteca').value.toLowerCase();
-  const categoria = $('#filtroCategoriaBiblioteca').value;
-  renderizarBiblioteca(livros.filter(livro => `${livro.code} ${livro.title} ${livro.author} ${livro.isbn || ''}`.toLowerCase().includes(termo) && (!categoria || livro.category === categoria)));
+
+function normalizarCategoria(categoria) {
+  return String(categoria ?? '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('pt-BR');
 }
 
-$('#pesquisaLeitor').addEventListener('input', evento => {
-  const termo = evento.target.value.toLowerCase();
-  renderizarLeitores(leitores.filter(leitor => `${leitor.nome} ${leitor.matricula} ${leitor.turma}`.toLowerCase().includes(termo)));
-});
+function obterCategoriasPadrao() {
+  return new Set([...$('#categoriaLivro').options]
+    .map(opcao => opcao.value)
+    .filter(valor => valor && valor !== 'Outro')
+    .map(normalizarCategoria));
+}
+
+function categoriaCorrespondeAoFiltro(categoriaLivro, categoriaFiltro, categoriasPadrao = obterCategoriasPadrao()) {
+  if (!categoriaFiltro) return true;
+  const categoriaNormalizada = normalizarCategoria(categoriaLivro);
+  if (categoriaFiltro !== 'Outro') return categoriaNormalizada === normalizarCategoria(categoriaFiltro);
+  if (!categoriaNormalizada) return false;
+  return !categoriasPadrao.has(categoriaNormalizada);
+}
+
+function filtrarBiblioteca() {
+  const termo = $('#pesquisaBiblioteca').value;
+  const categoria = $('#filtroCategoriaBiblioteca').value;
+  const categoriasPadrao = obterCategoriasPadrao();
+  renderizarBiblioteca(livros.filter(livro => livroCorrespondePesquisa(livro, termo) && categoriaCorrespondeAoFiltro(livro.category, categoria, categoriasPadrao)));
+}
+
+$('#pesquisaLeitor').addEventListener('input', filtrarLeitores);
+$('#filtroSituacaoLeitor').addEventListener('change', filtrarLeitores);
+
+function leitorCorrespondeAoFiltro(leitor, filtro) {
+  if (!filtro) return true;
+  const bloqueado = obterBloqueio(leitor.id).bloqueado;
+  const possuiAdvertencia = contarAdvertencias(leitor.id) > 0;
+  if (filtro === 'atencao') return bloqueado || possuiAdvertencia;
+  if (filtro === 'bloqueados') return bloqueado;
+  if (filtro === 'advertencias') return possuiAdvertencia;
+  return !bloqueado && !possuiAdvertencia;
+}
+
+function filtrarLeitores() {
+  const termo = $('#pesquisaLeitor').value;
+  const filtro = $('#filtroSituacaoLeitor').value;
+  renderizarLeitores(leitores.filter(leitor => leitorCorrespondePesquisa(leitor, termo) && leitorCorrespondeAoFiltro(leitor, filtro)));
+}
 
 $$('.filtro-emprestimo').forEach(botao => botao.addEventListener('click', () => {
   filtroAtual = botao.dataset.filtro;
