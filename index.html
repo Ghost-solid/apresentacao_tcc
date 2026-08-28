@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="DS Legacy - sistema de gestão da biblioteca escolar.">
   <title>DS Legacy | Biblioteca Escolar</title>
+  <link rel="icon" type="image/png" href="images/favicon_projeto.jpeg">
   <link rel="stylesheet" href="estilo.css">
   <link rel="stylesheet" href="biblioteca.css">
   <link rel="stylesheet" href="apresentacao.css">
@@ -34,7 +35,7 @@
       <div class="marca"><img src="images/1000043352.jpg" alt="Logo DS Legacy"><span><b>DS</b> Legacy</span></div>
       <nav>
         <button class="item-navegacao ativo" data-pagina="painel">▦ <span>Painel</span></button>
-        <button class="item-navegacao" data-pagina="leitores">👤 <span>Leitores</span></button>
+        <button class="item-navegacao" data-pagina="leitores">👤<span>Leitores</span></button>
         <button class="item-navegacao" data-pagina="biblioteca">▥ <span>Estoque</span></button>
         <button class="item-navegacao" data-pagina="emprestimos">⇄ <span>Empréstimos</span></button>
         <button class="item-navegacao" data-pagina="reservas">⧗ <span>Reservas</span></button>
@@ -92,14 +93,14 @@
 
   <dialog id="janelaLeitor">
     <form method="dialog" id="formularioLeitor">
-      <div class="titulo-modal"><h2>Cadastrar leitor</h2><button value="cancel" formnovalidate aria-label="Fechar">×</button></div>
-      <p class="explicacao-cadastro">Preencha somente os dados que desejar. O ID é criado automaticamente.</p>
+      <div class="titulo-modal"><h2 id="tituloFormularioLeitor">Cadastrar leitor</h2><button value="cancel" formnovalidate aria-label="Fechar">×</button></div>
+      <p class="explicacao-cadastro" id="explicacaoFormularioLeitor">Preencha somente os dados que desejar. O prefixo do ID acompanha o tipo selecionado.</p>
       <label for="nomeLeitor">Nome completo</label>
       <input id="nomeLeitor">
       <div class="grade-formulario">
         <div>
-          <label for="matriculaLeitor">ID do aluno/leitor</label>
-          <input class="campo-automatico" id="matriculaLeitor" readonly aria-label="ID do aluno ou leitor gerado automaticamente">
+          <label for="matriculaLeitor">ID do leitor</label>
+          <input class="campo-automatico" id="matriculaLeitor" readonly aria-label="ID do leitor gerado automaticamente conforme o tipo">
         </div>
         <div>
           <label for="tipoLeitor">Tipo</label>
@@ -108,7 +109,36 @@
         </div>
       </div>
       <label for="turmaLeitor">Turma ou setor</label>
-      <input id="turmaLeitor">
+      <select id="turmaLeitor" data-campo-outro="outraTurmaLeitor">
+        <option value="">Não informado</option>
+        <optgroup label="Ensino Fundamental">
+          <option>1º Ano A</option><option>1º Ano B</option><option>1º Ano C</option>
+          <option>2º Ano A</option><option>2º Ano B</option><option>2º Ano C</option>
+          <option>3º Ano A</option><option>3º Ano B</option><option>3º Ano C</option>
+          <option>4º Ano A</option><option>4º Ano B</option><option>4º Ano C</option>
+          <option>5º Ano A</option><option>5º Ano B</option><option>5º Ano C</option>
+          <option>6º Ano A</option><option>6º Ano B</option><option>6º Ano C</option>
+          <option>7º Ano A</option><option>7º Ano B</option><option>7º Ano C</option>
+          <option>8º Ano A</option><option>8º Ano B</option><option>8º Ano C</option>
+          <option>9º Ano A</option><option>9º Ano B</option><option>9º Ano C</option>
+        </optgroup>
+        <optgroup label="Ensino Médio">
+          <option>1ª Série A</option><option>1ª Série B</option><option>1ª Série C</option>
+          <option>2ª Série A</option><option>2ª Série B</option><option>2ª Série C</option>
+          <option>3ª Série A</option><option>3ª Série B</option><option>3ª Série C</option>
+        </optgroup>
+        <optgroup label="Setores">
+          <option>Biblioteca</option>
+          <option>Coordenação</option>
+          <option>Direção</option>
+          <option>Secretaria</option>
+          <option>Sala dos professores</option>
+          <option>Serviços gerais</option>
+          <option>Administrativo</option>
+        </optgroup>
+        <option value="Outro">Outra turma ou setor</option>
+      </select>
+      <input class="campo-outro oculto" id="outraTurmaLeitor" placeholder="Digite a turma ou o setor">
       <div class="acoes-modal"><button value="cancel" formnovalidate class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarLeitor">Salvar leitor</button></div>
     </form>
   </dialog>
@@ -205,6 +235,18 @@
       <select id="leitorReserva" required><option value="">Selecione um leitor</option></select>
       <p class="explicacao-renovacao">A reserva será adicionada ao final da fila. Cada leitor pode reservar o mesmo título apenas uma vez.</p>
       <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarReserva">Confirmar reserva</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="janelaExclusao">
+    <form method="dialog" id="formularioExclusao">
+      <div class="titulo-modal"><h2 id="tituloExclusao">Confirmar exclusão</h2><button value="cancel" formnovalidate aria-label="Fechar">×</button></div>
+      <p class="mensagem-exclusao" id="mensagemExclusao"></p>
+      <p class="alerta-exclusao">Esta ação remove o cadastro e não poderá ser desfeita. Históricos concluídos serão preservados.</p>
+      <label for="senhaExclusao">Senha da conta conectada</label>
+      <input id="senhaExclusao" type="password" autocomplete="current-password" required placeholder="Digite sua senha para confirmar">
+      <p class="erro-exclusao" id="erroExclusao" role="alert"></p>
+      <div class="acoes-modal"><button value="cancel" formnovalidate class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal botao-perigo" id="confirmarExclusao">Excluir permanentemente</button></div>
     </form>
   </dialog>
 

@@ -14,8 +14,10 @@ let emprestimos = JSON.parse(localStorage.getItem('ds_loans') || '[]');
 let reservas = JSON.parse(localStorage.getItem('ds_reservations') || '[]');
 let filtroAtual = 'ativos';
 let emprestimoEmDevolucao = null;
+let leitorEmEdicao = null;
 let livroEmEdicao = null;
 let emprestimoEmRenovacao = null;
+let exclusaoPendente = null;
 
 const $ = seletor => document.querySelector(seletor);
 const $$ = seletor => document.querySelectorAll(seletor);
@@ -140,15 +142,41 @@ function gerarIdentificador(prefixo, colecao, campo) {
   return identificador;
 }
 
-const gerarIdLeitor = () => gerarIdentificador('ALU', leitores, 'matricula');
+function prefixoIdLeitor(tipo) {
+  const tipoNormalizado = normalizarPesquisa(tipo);
+  if (tipoNormalizado === 'aluno') return 'ALU';
+  if (tipoNormalizado === 'professor') return 'PROF';
+  if (tipoNormalizado === 'funcionario') return 'FUNC';
+  return 'LEI';
+}
+
+const formatoIdAutomaticoLeitor = /^(ALU|PROF|FUNC|LEI)-(\d+)$/i;
+const gerarIdLeitor = tipo => gerarIdentificador(prefixoIdLeitor(tipo), leitores, 'matricula');
 const gerarIdLivro = () => gerarIdentificador('LIV', livros, 'code');
 
-// Mantém os dados antigos e completa apenas identificadores que ainda não existiam.
-function completarIdentificadoresAusentes() {
+function identificadorLeitorDisponivel(identificador, leitorIgnorado = null) {
+  const chave = String(identificador ?? '').trim().toLowerCase();
+  return !leitores.some(leitor => leitor !== leitorIgnorado && String(leitor.matricula ?? '').trim().toLowerCase() === chave);
+}
+
+function identificadorLeitorParaTipo(leitor, tipo) {
+  const atual = String(leitor?.matricula ?? '').trim();
+  if (!atual) return gerarIdLeitor(tipo);
+  const automatico = atual.match(formatoIdAutomaticoLeitor);
+  if (!automatico) return atual;
+  const prefixo = prefixoIdLeitor(tipo);
+  if (automatico[1].toUpperCase() === prefixo) return atual;
+  const candidato = `${prefixo}-${automatico[2].padStart(4, '0')}`;
+  return identificadorLeitorDisponivel(candidato, leitor) ? candidato : gerarIdLeitor(tipo);
+}
+
+// Completa IDs ausentes e ajusta apenas IDs automáticos ao tipo atual do leitor.
+function completarEAtualizarIdentificadores() {
   let alterado = false;
   leitores.forEach(leitor => {
-    if (String(leitor.matricula ?? '').trim()) return;
-    leitor.matricula = gerarIdLeitor();
+    const identificadorAtualizado = identificadorLeitorParaTipo(leitor, leitor.tipo);
+    if (identificadorAtualizado === String(leitor.matricula ?? '').trim()) return;
+    leitor.matricula = identificadorAtualizado;
     alterado = true;
   });
   livros.forEach(livro => {
@@ -159,7 +187,7 @@ function completarIdentificadoresAusentes() {
   if (alterado) salvarDados();
 }
 
-completarIdentificadoresAusentes();
+completarEAtualizarIdentificadores();
 
 // Mostra um campo de texto quando uma opção "Outro" é escolhida.
 $$('[data-campo-outro]').forEach(seletor => {
@@ -183,6 +211,14 @@ function valorComOutro(idSeletor) {
 function limparCamposOutro(formulario) {
   formulario.querySelectorAll('[data-campo-outro]').forEach(seletor => atualizarCampoOutro(seletor));
 }
+
+function atualizarPreviaIdLeitor() {
+  const tipo = valorComOutro('tipoLeitor');
+  $('#matriculaLeitor').value = identificadorLeitorParaTipo(leitorEmEdicao, tipo);
+}
+
+$('#tipoLeitor').addEventListener('change', atualizarPreviaIdLeitor);
+$('#outroTipoLeitor').addEventListener('input', atualizarPreviaIdLeitor);
 
 $('#mostrarSenha').addEventListener('click', () => {
   $('#senha').type = $('#senha').type === 'password' ? 'text' : 'password';
@@ -227,14 +263,26 @@ $$('.item-navegacao').forEach(item => item.addEventListener('click', () => abrir
 $$('[data-go]').forEach(item => item.addEventListener('click', () => abrirPagina(item.dataset.go)));
 $('#menuCelular').addEventListener('click', () => $('#barra-lateral').classList.toggle('aberto'));
 
-$('#abrirLeitor').addEventListener('click', abrirFormularioLeitor);
+$('#abrirLeitor').addEventListener('click', () => abrirFormularioLeitor());
 $('#abrirItemBiblioteca').addEventListener('click', () => abrirFormularioLivro());
 $('#abrirReserva').addEventListener('click', () => abrirFormularioReserva());
 
-function abrirFormularioLeitor() {
+function abrirFormularioLeitor(leitorId = null) {
   $('#formularioLeitor').reset();
   limparCamposOutro($('#formularioLeitor'));
-  $('#matriculaLeitor').value = gerarIdLeitor();
+  leitorEmEdicao = leitorId === null ? null : leitores.find(leitor => leitor.id === Number(leitorId));
+  $('#tituloFormularioLeitor').textContent = leitorEmEdicao ? 'Editar leitor' : 'Cadastrar leitor';
+  $('#explicacaoFormularioLeitor').textContent = leitorEmEdicao
+    ? 'Corrija os dados ou atualize a turma/setor. Ao trocar o tipo, o prefixo do ID também será atualizado.'
+    : 'Preencha somente os dados que desejar. O prefixo do ID acompanha o tipo selecionado.';
+  $('#salvarLeitor').textContent = leitorEmEdicao ? 'Atualizar leitor' : 'Salvar leitor';
+  if (leitorEmEdicao) {
+    $('#matriculaLeitor').value = leitorEmEdicao.matricula;
+    $('#nomeLeitor').value = leitorEmEdicao.nome || '';
+    definirOpcaoOuOutro('tipoLeitor', leitorEmEdicao.tipo);
+    definirOpcaoOuOutro('turmaLeitor', leitorEmEdicao.turma);
+  }
+  atualizarPreviaIdLeitor();
   $('#janelaLeitor').showModal();
 }
 
@@ -297,7 +345,7 @@ $('#salvarReserva').addEventListener('click', evento => {
 function definirOpcaoOuOutro(idSeletor, valor) {
   const seletor = $(`#${idSeletor}`);
   const valorTexto = String(valor ?? '').trim();
-  const normalizar = idSeletor === 'categoriaLivro' ? normalizarCategoria : texto => texto;
+  const normalizar = idSeletor === 'categoriaLivro' ? normalizarCategoria : normalizarPesquisa;
   const opcaoExistente = [...seletor.options].find(opcao => opcao.value !== 'Outro' && normalizar(opcao.value) === normalizar(valorTexto));
   seletor.value = opcaoExistente ? opcaoExistente.value : 'Outro';
   atualizarCampoOutro(seletor);
@@ -336,16 +384,31 @@ function abrirFormularioLivro(livroId = null) {
 $('#salvarLeitor').addEventListener('click', evento => {
   evento.preventDefault();
   if (!$('#formularioLeitor').reportValidity()) return;
-  const idExibido = $('#matriculaLeitor').value.trim();
-  const idDisponivel = /^ALU-\d+$/i.test(idExibido) && !leitores.some(leitor => String(leitor.matricula ?? '').toLowerCase() === idExibido.toLowerCase());
-  const matricula = idDisponivel ? idExibido : gerarIdLeitor();
-  leitores.push({ id: gerarIdTecnico(leitores), nome: $('#nomeLeitor').value.trim(), matricula, tipo: valorComOutro('tipoLeitor'), turma: $('#turmaLeitor').value.trim() });
+  const editando = Boolean(leitorEmEdicao);
+  const tipo = valorComOutro('tipoLeitor');
+  let matricula = identificadorLeitorParaTipo(leitorEmEdicao, tipo);
+  if (!editando) {
+    const idExibido = $('#matriculaLeitor').value.trim();
+    const prefixo = prefixoIdLeitor(tipo);
+    const formatoEsperado = new RegExp(`^${prefixo}-\\d+$`, 'i');
+    const idDisponivel = formatoEsperado.test(idExibido) && identificadorLeitorDisponivel(idExibido);
+    matricula = idDisponivel ? idExibido : gerarIdLeitor(tipo);
+  }
+  const dadosLeitor = {
+    nome: $('#nomeLeitor').value.trim(),
+    matricula,
+    tipo,
+    turma: valorComOutro('turmaLeitor')
+  };
+  if (editando) Object.assign(leitorEmEdicao, dadosLeitor);
+  else leitores.push({ id: gerarIdTecnico(leitores), ...dadosLeitor });
   salvarDados();
   $('#formularioLeitor').reset();
   limparCamposOutro($('#formularioLeitor'));
   $('#janelaLeitor').close();
   renderizarTudo();
-  mostrarAviso(`Leitor cadastrado com o ID ${matricula}.`);
+  mostrarAviso(editando ? 'Informações do leitor atualizadas.' : `Leitor cadastrado com o ID ${matricula}.`);
+  leitorEmEdicao = null;
 });
 
 $('#salvarItemBiblioteca').addEventListener('click', evento => {
@@ -381,6 +444,71 @@ $('#salvarItemBiblioteca').addEventListener('click', evento => {
   renderizarTudo();
   mostrarAviso(editando ? 'Livro e estoque atualizados.' : `Livro cadastrado com o ID ${codigo}.`);
   livroEmEdicao = null;
+});
+
+function impedimentoExclusao(tipo, id) {
+  if (tipo === 'leitor') {
+    if (emprestimos.some(item => item.readerId === id && !item.returnDate)) return 'Este leitor possui um empréstimo ativo. Registre a devolução antes de excluí-lo.';
+    if (reservas.some(item => item.readerId === id && item.status === 'ativa')) return 'Este leitor possui uma reserva ativa. Cancele ou atenda a reserva antes de excluí-lo.';
+    return '';
+  }
+  if (emprestimos.some(item => item.bookId === id && !item.returnDate)) return 'Este livro possui um empréstimo ativo. Registre a devolução antes de excluí-lo.';
+  if (reservas.some(item => item.bookId === id && item.status === 'ativa')) return 'Este livro possui uma reserva ativa. Cancele ou atenda a reserva antes de excluí-lo.';
+  return '';
+}
+
+function abrirConfirmacaoExclusao(tipo, id) {
+  const registro = tipo === 'leitor'
+    ? leitores.find(leitor => leitor.id === Number(id))
+    : livros.find(livro => livro.id === Number(id));
+  if (!registro) return mostrarAviso(tipo === 'leitor' ? 'Leitor não encontrado.' : 'Livro não encontrado.');
+  const impedimento = impedimentoExclusao(tipo, registro.id);
+  if (impedimento) return mostrarAviso(impedimento);
+  exclusaoPendente = { tipo, id: registro.id };
+  $('#formularioExclusao').reset();
+  $('#erroExclusao').textContent = '';
+  const nome = tipo === 'leitor' ? nomeLeitorParaExibicao(registro) : tituloLivroParaExibicao(registro);
+  const identificador = tipo === 'leitor' ? registro.matricula : registro.code;
+  $('#tituloExclusao').textContent = tipo === 'leitor' ? 'Excluir leitor' : 'Excluir livro';
+  $('#mensagemExclusao').textContent = `Você está prestes a excluir ${tipo === 'leitor' ? 'o leitor' : 'o livro'} “${nome}” (${identificador}).`;
+  $('#janelaExclusao').showModal();
+  $('#senhaExclusao').focus();
+}
+
+$('#formularioExclusao').addEventListener('submit', evento => {
+  evento.preventDefault();
+  if (!$('#formularioExclusao').reportValidity() || !exclusaoPendente) return;
+  const contaConectada = usuarios[usuarioAtual?.chave];
+  if (!contaConectada || $('#senhaExclusao').value !== contaConectada.senha) {
+    $('#erroExclusao').textContent = 'Senha incorreta. Digite a senha da conta que está conectada.';
+    $('#senhaExclusao').select();
+    return;
+  }
+  const { tipo, id } = exclusaoPendente;
+  const impedimento = impedimentoExclusao(tipo, id);
+  if (impedimento) {
+    $('#erroExclusao').textContent = impedimento;
+    return;
+  }
+  const existe = tipo === 'leitor'
+    ? leitores.some(leitor => leitor.id === id)
+    : livros.some(livro => livro.id === id);
+  if (!existe) {
+    $('#erroExclusao').textContent = tipo === 'leitor' ? 'Este leitor já foi excluído.' : 'Este livro já foi excluído.';
+    return;
+  }
+  if (tipo === 'leitor') leitores = leitores.filter(leitor => leitor.id !== id);
+  else livros = livros.filter(livro => livro.id !== id);
+  salvarDados();
+  $('#janelaExclusao').close();
+  renderizarTudo();
+  mostrarAviso(tipo === 'leitor' ? 'Leitor excluído com sucesso.' : 'Livro excluído com sucesso.');
+});
+
+$('#janelaExclusao').addEventListener('close', () => {
+  exclusaoPendente = null;
+  $('#formularioExclusao').reset();
+  $('#erroExclusao').textContent = '';
 });
 
 function obterBloqueio(leitorId) {
@@ -598,9 +726,10 @@ function renderizarBiblioteca(lista = livros) {
   bibliotecaVazia.querySelector('span').textContent = livros.length && filtroAtivo ? 'Tente pesquisar outro termo ou alterar a categoria.' : 'Cadastre o primeiro livro do Estoque.';
   bibliotecaVazia.style.display = lista.length ? 'none' : 'flex';
   $('#tabelaBiblioteca').style.display = lista.length ? 'table' : 'none';
-  $('#tabelaBiblioteca tbody').innerHTML = lista.map(livro => `<tr><td>${escaparHtml(livro.code)}</td><td><b>${escaparHtml(livro.title || 'Sem título')}</b><small class="detalhe-livro">${escaparHtml(livro.publisher || '')} ${livro.year || ''}${Number(livro.lostCopies || 0) ? ` • ${livro.lostCopies} perdido(s)` : ''}</small></td><td>${escaparHtml(livro.author || 'Não informado')}</td><td>${escaparHtml(livro.category || 'Não informada')}</td><td>${escaparHtml(livro.isbn || '—')}</td><td>${escaparHtml(livro.location || 'Não informado')}</td><td>${livro.quantity}</td><td><b class="${Number(livro.available) === 0 ? 'estoque-baixo' : ''}">${livro.available}</b></td><td>${escaparHtml(livro.condition || 'Não informado')}</td><td><div class="acoes-emprestimo"><button class="botao-pequeno editar-livro" data-id="${livro.id}">Editar</button>${livroPodeSerReservado(livro) ? `<button class="botao-pequeno reservar-livro" data-id="${livro.id}">Reservar</button>` : ''}</div></td></tr>`).join('');
+  $('#tabelaBiblioteca tbody').innerHTML = lista.map(livro => `<tr><td>${escaparHtml(livro.code)}</td><td><b>${escaparHtml(livro.title || 'Sem título')}</b><small class="detalhe-livro">${escaparHtml(livro.publisher || '')} ${livro.year || ''}${Number(livro.lostCopies || 0) ? ` • ${livro.lostCopies} perdido(s)` : ''}</small></td><td>${escaparHtml(livro.author || 'Não informado')}</td><td>${escaparHtml(livro.category || 'Não informada')}</td><td>${escaparHtml(livro.isbn || '—')}</td><td>${escaparHtml(livro.location || 'Não informado')}</td><td>${livro.quantity}</td><td><b class="${Number(livro.available) === 0 ? 'estoque-baixo' : ''}">${livro.available}</b></td><td>${escaparHtml(livro.condition || 'Não informado')}</td><td><div class="acoes-emprestimo"><button class="botao-pequeno editar-livro" data-id="${livro.id}">Editar</button>${livroPodeSerReservado(livro) ? `<button class="botao-pequeno reservar-livro" data-id="${livro.id}">Reservar</button>` : ''}<button class="botao-pequeno botao-excluir excluir-livro" data-id="${livro.id}">Excluir</button></div></td></tr>`).join('');
   $$('.editar-livro').forEach(botao => botao.addEventListener('click', () => abrirFormularioLivro(botao.dataset.id)));
   $$('.reservar-livro').forEach(botao => botao.addEventListener('click', () => abrirFormularioReserva(botao.dataset.id)));
+  $$('.excluir-livro').forEach(botao => botao.addEventListener('click', () => abrirConfirmacaoExclusao('livro', botao.dataset.id)));
 }
 
 function cancelarReserva(reservaId) {
@@ -648,10 +777,12 @@ function renderizarLeitores(lista = leitores) {
   $('#tabelaLeitores tbody').innerHTML = lista.map(leitor => {
     const bloqueio = obterBloqueio(leitor.id);
     const advertencias = contarAdvertencias(leitor.id);
-    return `<tr><td>${escaparHtml(leitor.nome || 'Sem nome')}</td><td>${escaparHtml(leitor.matricula)}</td><td>${escaparHtml(leitor.tipo || 'Não informado')}</td><td>${escaparHtml(leitor.turma || 'Não informada')}</td><td><span class="contador-advertencias ${advertencias ? 'possui' : ''}">${advertencias}</span></td><td><span class="situacao ${bloqueio.bloqueado ? 'atrasado' : ''}">${bloqueio.bloqueado ? 'Bloqueado' : 'Liberado'}</span></td><td><div class="acoes-emprestimo"><button class="botao-pequeno ver-historico-leitor" data-id="${leitor.id}">Histórico</button><button class="botao-pequeno emprestar-leitor" data-id="${leitor.id}" ${bloqueio.bloqueado ? 'disabled' : ''}>Emprestar</button></div></td></tr>`;
+    return `<tr><td>${escaparHtml(leitor.nome || 'Sem nome')}</td><td>${escaparHtml(leitor.matricula)}</td><td>${escaparHtml(leitor.tipo || 'Não informado')}</td><td>${escaparHtml(leitor.turma || 'Não informada')}</td><td><span class="contador-advertencias ${advertencias ? 'possui' : ''}">${advertencias}</span></td><td><span class="situacao ${bloqueio.bloqueado ? 'atrasado' : ''}">${bloqueio.bloqueado ? 'Bloqueado' : 'Liberado'}</span></td><td><div class="acoes-emprestimo"><button class="botao-pequeno editar-leitor" data-id="${leitor.id}">Editar</button><button class="botao-pequeno ver-historico-leitor" data-id="${leitor.id}">Histórico</button><button class="botao-pequeno emprestar-leitor" data-id="${leitor.id}" ${bloqueio.bloqueado ? 'disabled' : ''}>Emprestar</button><button class="botao-pequeno botao-excluir excluir-leitor" data-id="${leitor.id}">Excluir</button></div></td></tr>`;
   }).join('');
+  $$('.editar-leitor').forEach(botao => botao.addEventListener('click', () => abrirFormularioLeitor(botao.dataset.id)));
   $$('.emprestar-leitor').forEach(botao => botao.addEventListener('click', () => prepararEmprestimo(botao.dataset.id)));
   $$('.ver-historico-leitor').forEach(botao => botao.addEventListener('click', () => abrirHistoricoLeitor(Number(botao.dataset.id))));
+  $$('.excluir-leitor').forEach(botao => botao.addEventListener('click', () => abrirConfirmacaoExclusao('leitor', botao.dataset.id)));
 }
 
 function abrirHistoricoLeitor(leitorId) {

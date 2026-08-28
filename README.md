@@ -14,9 +14,11 @@ O **DS Legacy** é um protótipo de sistema para gerenciamento de biblioteca esc
 
 ### Leitores
 
-- Cadastro de alunos, professores e funcionários.
-- Geração automática de identificadores no formato `ALU-0001`.
+- Cadastro e edição de alunos, professores e funcionários sem perder o histórico.
+- Geração automática de identificadores conforme o tipo: `ALU-0001`, `PROF-0001`, `FUNC-0001` ou `LEI-0001`.
 - Campos opcionais para facilitar o cadastro.
+- Seleção predefinida de turmas do ensino fundamental, ensino médio e setores da escola, com opção personalizada.
+- Exclusão de leitores mediante confirmação com a senha da conta conectada.
 - Pesquisa por nome, ID, tipo, turma, situação ou quantidade de advertências.
 - Filtros para leitores bloqueados, advertidos, sem restrições ou que requerem atenção.
 - Histórico individual de empréstimos, atrasos, advertências e renovações.
@@ -25,6 +27,7 @@ O **DS Legacy** é um protótipo de sistema para gerenciamento de biblioteca esc
 ### Livros e estoque
 
 - Cadastro e edição de livros.
+- Exclusão de livros mediante confirmação com a senha da conta conectada.
 - Geração automática de identificadores no formato `LIV-0001`.
 - Controle da quantidade total e dos exemplares disponíveis.
 - Registro de exemplares perdidos.

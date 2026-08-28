@@ -197,6 +197,45 @@
   white-space: nowrap;
 }
 
+.botao-pequeno.botao-excluir {
+  border-color: #f2c4c8;
+  color: var(--vermelho);
+}
+
+.botao-pequeno.botao-excluir:hover {
+  border-color: var(--vermelho);
+  background: #fff1f2;
+}
+
+.mensagem-exclusao {
+  margin: 16px 0 10px;
+  color: var(--texto);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.alerta-exclusao {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 4px solid var(--vermelho);
+  border-radius: 5px;
+  background: #fff1f2;
+  color: #9f2934;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.erro-exclusao {
+  min-height: 16px;
+  margin: 7px 0 0;
+  color: var(--vermelho);
+  font-size: 10px;
+}
+
+.botao-principal.botao-perigo {
+  background: var(--vermelho);
+}
+
 .janela-historico {
   width: 850px;
 }
