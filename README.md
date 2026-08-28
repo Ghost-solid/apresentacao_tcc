@@ -1,182 +1,216 @@
 # DS Legacy — Biblioteca Escolar
 
-O **DS Legacy** é um protótipo de sistema para gerenciamento de biblioteca escolar, desenvolvido como projeto de TCC. A aplicação permite controlar leitores, livros, empréstimos, devoluções, renovações, reservas e relatórios por meio de uma interface responsiva executada diretamente no navegador.
+O **DS Legacy** é um sistema de gestão de biblioteca escolar desenvolvido como projeto de TCC. A aplicação centraliza leitores, livros, estoque, empréstimos, devoluções, renovações, reservas e relatórios em um banco **PostgreSQL**, permitindo que os mesmos dados sejam acessados por computadores diferentes.
 
-## Funcionalidades
+## Arquitetura
 
-### Painel
+```text
+Navegador ──HTTPS──> Servidor Node.js / API ──SSL──> PostgreSQL
+```
 
-- Resumo da quantidade de títulos, leitores e empréstimos ativos.
-- Indicadores de devoluções atrasadas.
-- Lista de devoluções próximas.
-- Identificação rápida de leitores bloqueados.
-- Notificações sobre atrasos.
+O navegador nunca recebe a senha ou o endereço do banco. A interface chama a API do servidor, e o servidor executa consultas parametrizadas e transações no PostgreSQL. Para acessar de qualquer lugar, a aplicação e o banco precisam estar hospedados; os usuários acessam somente a URL HTTPS da aplicação.
+
+## Funcionalidades preservadas
+
+### Painel e relatórios
+
+- Indicadores de títulos, leitores, empréstimos e devoluções atrasadas.
+- Lista de prazos próximos e leitores bloqueados.
+- Relatório de movimentações, advertências e perdas.
+- Impressão pelo navegador e área de relatórios restrita ao diretor.
 
 ### Leitores
 
-- Cadastro e edição de alunos, professores e funcionários sem perder o histórico.
-- Geração automática de identificadores conforme o tipo: `ALU-0001`, `PROF-0001`, `FUNC-0001` ou `LEI-0001`.
-- Campos opcionais para facilitar o cadastro.
-- Seleção predefinida de turmas do ensino fundamental, ensino médio e setores da escola, com opção personalizada.
-- Exclusão de leitores mediante confirmação com a senha da conta conectada.
-- Pesquisa por nome, ID, tipo, turma, situação ou quantidade de advertências.
-- Filtros para leitores bloqueados, advertidos, sem restrições ou que requerem atenção.
-- Histórico individual de empréstimos, atrasos, advertências e renovações.
-- Bloqueio automático quando existe devolução atrasada ou penalidade ativa.
+- Cadastro, edição, histórico e exclusão com confirmação por senha.
+- Identificadores automáticos por tipo: `ALU-0001`, `PROF-0001`, `FUNC-0001` e `LEI-0001`.
+- Turmas e setores predefinidos, com opção personalizada.
+- Pesquisa tolerante a acentos, espaços, pontuação e letras maiúsculas.
+- Filtros de bloqueio, advertência e necessidade de atenção.
 
 ### Livros e estoque
 
-- Cadastro e edição de livros.
-- Exclusão de livros mediante confirmação com a senha da conta conectada.
-- Geração automática de identificadores no formato `LIV-0001`.
-- Controle da quantidade total e dos exemplares disponíveis.
-- Registro de exemplares perdidos.
-- Categorias predefinidas e possibilidade de cadastrar outras categorias.
-- Filtro que agrupa automaticamente todas as categorias personalizadas em **Outras categorias**.
-- Pesquisa por qualquer informação do livro, incluindo título, autor, ID, ISBN, editora, categoria, ano, localização e estado de conservação.
+- Cadastro, edição e exclusão segura de livros.
+- Identificadores automáticos no formato `LIV-0001`.
+- Quantidade total, exemplares disponíveis e livros perdidos.
+- Pesquisa por título, autor, ID, ISBN, editora, categoria, ano, localização e conservação.
+- Categorias predefinidas e agrupamento de categorias personalizadas em **Outras categorias**.
 
-### Empréstimos e devoluções
+### Circulação do acervo
 
-- Empréstimo apenas de exemplares disponíveis.
-- Definição automática da data inicial e sugestão de prazo de sete dias.
-- Validação para impedir empréstimos a leitores bloqueados.
-- Registro da condição do livro durante a devolução.
-- Advertência quando o livro é devolvido em condição diferente de **Bom**.
-- Registro de livro perdido sem devolver o exemplar ao estoque disponível.
-- Penalidade de um mês quando a devolução ocorre com atraso.
+- Empréstimos apenas para leitores liberados e exemplares disponíveis.
+- Devolução com estado de conservação, observação, advertência e penalidade por atraso.
+- Renovação com histórico de prazos.
+- Bloqueio de renovação para empréstimo atrasado, leitor bloqueado ou livro reservado.
+- Reserva de títulos indisponíveis, fila de espera e atendimento do primeiro leitor.
+- Atualizações de estoque feitas em transações para evitar dois empréstimos do mesmo exemplar.
 
-### Renovações
+## Tecnologias
 
-- Renovação com registro do prazo anterior e do novo prazo.
-- Impedimento de renovação para empréstimos atrasados.
-- Impedimento de renovação para leitores bloqueados.
-- Impedimento de renovação quando o livro possui uma reserva ativa.
+- HTML5, CSS3 e JavaScript no navegador.
+- Node.js 20 ou superior e Express 5.
+- PostgreSQL e driver `pg`.
+- Sessões armazenadas no banco com cookie `HttpOnly`.
+- Senhas protegidas com hash bcrypt.
+- Helmet, política CSP e limite de tentativas de login.
+- Docker e Compose opcionais para implantação.
 
-### Reservas
+## Executar localmente
 
-- Reserva de títulos sem exemplares disponíveis e com empréstimo ativo.
-- Organização automática da fila por ordem de solicitação.
-- Uma reserva ativa por leitor para cada título.
-- Cancelamento de reservas.
-- Indicação quando o livro está disponível para o primeiro leitor da fila.
-- Atendimento automático da reserva quando o empréstimo é registrado para o primeiro leitor.
+### Requisitos
 
-### Relatórios
+- Node.js 20 ou superior.
+- PostgreSQL 14 ou superior.
+- Um banco vazio chamado, por exemplo, `ds_legacy`.
 
-- Resumo de títulos, leitores, empréstimos, atrasos, bloqueios, advertências e perdas.
-- Impressão do relatório pelo navegador.
-- Área disponível somente para o perfil de diretor.
-
-## Tecnologias utilizadas
-
-- HTML5
-- CSS3
-- JavaScript puro
-- API `localStorage` do navegador
-
-O projeto não utiliza framework, gerenciador de pacotes ou etapa de compilação.
-
-## Como executar
-
-### Opção 1: abrir diretamente
-
-Abra o arquivo `index.html` em um navegador moderno.
-
-### Opção 2: servidor local
-
-Na pasta do projeto, execute:
+### 1. Instalar os pacotes
 
 ```bash
-python -m http.server 8000
+npm install
 ```
 
-Depois acesse:
+### 2. Configurar o ambiente
 
-```text
-http://localhost:8000/index.html
+No PowerShell:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
-Usar um servidor local é recomendado porque mantém uma origem estável para os dados do `localStorage`.
+No Linux ou macOS:
 
-## Contas de demonstração
+```bash
+cp .env.example .env
+```
 
-| Perfil | Usuário | Senha |
-|---|---|---|
-| Biblioteca | `testebiblioteca` | `Biblioteca@123` |
-| Diretor | `testediretor` | `Diretor@123` |
+Edite o `.env` e configure principalmente:
 
-Essas contas existem apenas para apresentação do protótipo. Em uma aplicação de produção, autenticação, usuários e senhas devem ser processados com segurança no servidor.
+```dotenv
+DATABASE_URL=postgresql://usuario:senha@localhost:5432/ds_legacy
+DB_SSL=false
+LIBRARIAN_PASSWORD=uma-senha-forte
+DIRECTOR_PASSWORD=outra-senha-forte
+```
 
-## Armazenamento dos dados
+O arquivo `.env` contém segredos e está ignorado pelo Git. Ele nunca deve ser enviado ao repositório.
 
-Os dados são salvos localmente no navegador nas seguintes chaves:
+### 3. Preparar as tabelas e contas
 
-| Chave | Conteúdo |
+```bash
+npm run db:init
+```
+
+Esse comando aplica [database/schema.sql](database/schema.sql) e cria ou atualiza as contas definidas no `.env`.
+
+### 4. Iniciar
+
+```bash
+npm start
+```
+
+Acesse `http://localhost:8000`. A porta `8000` também preserva a origem recomendada na versão anterior, permitindo que a migração automática encontre os dados locais. Abrir o `index.html` diretamente permite apenas exportar um backup antigo; o restante do sistema depende da API.
+
+## Usar Docker Compose
+
+O arquivo `compose.yaml` inicia a aplicação e um PostgreSQL persistente:
+
+```bash
+docker compose up --build
+```
+
+Antes de usar fora de desenvolvimento, troque todas as senhas presentes no arquivo ou forneça-as por variáveis protegidas do ambiente de hospedagem.
+
+## Publicar para acesso de qualquer lugar
+
+1. Crie um PostgreSQL gerenciado ou um PostgreSQL em servidor próprio.
+2. Crie um serviço Node usando este repositório ou o `Dockerfile`.
+3. Cadastre as variáveis do `.env` no painel secreto do serviço, sem enviar um arquivo `.env`.
+4. Use `npm ci` para instalar, `npm run db:init` para preparar o banco e `npm start` para iniciar.
+5. Ative HTTPS na URL pública.
+6. Configure `DB_SSL=true` quando o provedor do PostgreSQL exigir conexão criptografada.
+7. Configure `COOKIE_SECURE=true` para que a sessão seja enviada somente por HTTPS.
+8. Verifique `https://seu-dominio/api/health`; a resposta deve indicar banco conectado.
+
+Em produção, o PostgreSQL não deve aceitar conexões públicas indiscriminadas. Permita somente o servidor da aplicação, quando o provedor oferecer controle de rede.
+
+## Migração automática dos dados antigos
+
+A versão anterior gravava dados nestas chaves do navegador:
+
+- `ds_readers`
+- `ds_library`
+- `ds_loans`
+- `ds_reservations`
+
+No primeiro login após a atualização, se o PostgreSQL estiver vazio e a aplicação for aberta na mesma origem anterior — por exemplo, `http://localhost:8000` — ela importa automaticamente leitores, livros, empréstimos, renovações e reservas. A importação acontece somente uma vez e não sobrescreve um banco que já possua dados.
+
+Se o protótipo era aberto diretamente como arquivo ou em outro endereço:
+
+1. Abra a aplicação no endereço antigo.
+2. Na tela de entrada, clique em **Exportar dados locais**.
+3. Abra a nova aplicação conectada ao PostgreSQL.
+4. Clique em **Selecionar backup** e escolha o JSON exportado.
+5. Entre com uma conta; o backup será importado se o banco ainda estiver vazio.
+
+Os valores antigos não são apagados automaticamente, servindo como cópia temporária até a migração ser conferida. O arquivo `aliceplinio.sql` continua apenas como referência histórica de uma estrutura MySQL e não é usado pela aplicação PostgreSQL.
+
+## Estrutura do banco
+
+| Tabela | Conteúdo |
 |---|---|
-| `ds_readers` | Leitores cadastrados |
-| `ds_library` | Livros e estoque |
-| `ds_loans` | Empréstimos e devoluções |
-| `ds_reservations` | Reservas e filas de espera |
+| `app_users` | Contas, perfis e hashes das senhas |
+| `app_sessions` | Sessões autenticadas com prazo de expiração |
+| `readers` | Alunos, professores e funcionários |
+| `books` | Livros, identificação e estoque |
+| `loans` | Empréstimos, devoluções, bloqueios e renovações |
+| `reservations` | Reservas, fila e situação do atendimento |
 
-Por utilizar `localStorage`:
+Leitores e livros excluídos são arquivados no banco para que os históricos concluídos continuem íntegros.
 
-- os dados permanecem após atualizar ou fechar a página;
-- cada navegador e endereço possui seu próprio conjunto de dados;
-- os dados não são compartilhados entre computadores;
-- limpar os dados do navegador remove os registros da aplicação.
+## Segurança
 
-### Limpar todos os dados
+- A `DATABASE_URL` existe somente no servidor.
+- Consultas recebem parâmetros, evitando concatenação de valores do usuário no SQL.
+- Senhas não são gravadas em texto puro no banco.
+- A sessão usa token aleatório, hash no PostgreSQL e cookie `HttpOnly`, `SameSite=Strict` e `Secure` em produção.
+- Exclusões verificam novamente a senha e as dependências no servidor.
+- Empréstimos, devoluções, renovações e reservas são revalidados dentro de transações.
+- Tentativas repetidas de login são limitadas.
 
-Abra as ferramentas do desenvolvedor do navegador (`F12`), acesse a aba **Console** e execute:
+## Backup
 
-```javascript
-localStorage.clear();
-location.reload();
+O acesso remoto centraliza os dados, mas não substitui backup. Ative backups automáticos no provedor ou execute periodicamente:
+
+```bash
+pg_dump "$DATABASE_URL" --format=custom --file=ds_legacy.backup
 ```
 
-## Regras importantes
+Teste também a restauração em um banco separado antes de depender do backup em produção.
 
-- IDs de leitores e livros são gerados automaticamente e não precisam ser digitados.
-- Pesquisas ignoram diferenças de acentuação, letras maiúsculas, espaços e pontuação.
-- Um livro com reserva ativa não pode ser renovado.
-- Uma reserva cancelada ou atendida deixa de bloquear a renovação.
-- Um leitor bloqueado não pode realizar novos empréstimos.
-- Alterações no estoque respeitam exemplares emprestados ou registrados como perdidos.
+## Scripts
+
+| Comando | Ação |
+|---|---|
+| `npm start` | Inicia o servidor |
+| `npm run dev` | Inicia com recarregamento durante o desenvolvimento |
+| `npm run db:init` | Cria tabelas e sincroniza contas administrativas |
+| `npm run check` | Verifica a sintaxe dos arquivos JavaScript |
 
 ## Estrutura do projeto
 
 ```text
 Apresentacao_tcc/
-├── index.html          # Estrutura das páginas, tabelas e formulários
-├── interacao.js        # Regras de negócio, filtros e persistência local
-├── estilo.css          # Estilos gerais da aplicação
-├── apresentacao.css    # Identidade visual e apresentação
-├── biblioteca.css      # Estilos das funcionalidades da biblioteca
-├── aliceplinio.sql     # Dump de banco de dados usado como referência
-├── images/             # Imagens utilizadas pela interface
-└── README.md           # Documentação do projeto
+├── database/schema.sql       # Esquema PostgreSQL
+├── scripts/init-db.js        # Inicialização do banco e das contas
+├── src/database.js           # Pool de conexão e transações
+├── src/library-service.js    # Regras de negócio no servidor
+├── server.js                 # API, autenticação e arquivos da interface
+├── index.html                # Estrutura da interface
+├── interacao.js              # Interações e consumo da API
+├── estilo.css                # Estilos gerais
+├── apresentacao.css          # Identidade visual
+├── biblioteca.css            # Estilos do acervo
+├── Dockerfile                # Imagem da aplicação
+├── compose.yaml              # Aplicação e PostgreSQL local
+├── .env.example              # Modelo de configuração
+└── README.md                 # Documentação
 ```
-
-## Banco de dados
-
-O arquivo `aliceplinio.sql` contém uma estrutura e dados de referência em MySQL, incluindo tabelas de alunos, livros e empréstimos. Nesta versão do protótipo, a interface não está conectada ao banco: os dados utilizados pela aplicação são armazenados exclusivamente no `localStorage`.
-
-Para uma versão com múltiplos usuários, será necessário criar uma API no servidor e integrar a interface ao banco de dados.
-
-## Limitações atuais
-
-- Autenticação demonstrativa implementada no JavaScript do navegador.
-- Dados armazenados apenas no dispositivo local.
-- Ausência de sincronização entre usuários ou computadores.
-- Ausência de API e integração ativa com o arquivo SQL.
-- Ausência de controle de permissões no servidor.
-- Ausência de backup automático dos registros.
-
-## Próximas melhorias sugeridas
-
-- Criar um backend com autenticação segura.
-- Integrar a aplicação ao banco de dados MySQL.
-- Adicionar exportação de relatórios em PDF ou planilha.
-- Implementar backup e restauração dos dados.
-- Adicionar testes automatizados permanentes.
-- Registrar auditoria das operações realizadas pelos usuários.

@@ -1,17 +1,30 @@
-// Contas usadas somente no protótipo. Em produção, o login deve ficar no servidor.
-const usuarios = {
-  testebiblioteca: { senha: 'Biblioteca@123', nome: 'Responsável da Biblioteca', perfil: 'Biblioteca' },
-  testediretor: { senha: 'Diretor@123', nome: 'Diretor Teste', perfil: 'Diretor' }
+function lerListaLocal(chave) {
+  try {
+    const valor = JSON.parse(localStorage.getItem(chave) || '[]');
+    return Array.isArray(valor) ? valor : [];
+  } catch {
+    return [];
+  }
+}
+
+const dadosAntigosLeitores = lerListaLocal('ds_students');
+const dadosLocaisLegados = {
+  readers: lerListaLocal('ds_readers').length
+    ? lerListaLocal('ds_readers')
+    : dadosAntigosLeitores.map(item => ({
+      id: item.id, nome: item.name, matricula: item.registration || '', tipo: 'Aluno', turma: item.className || ''
+    })),
+  books: lerListaLocal('ds_library'),
+  loans: lerListaLocal('ds_loans'),
+  reservations: lerListaLocal('ds_reservations')
 };
 
-const dadosAntigosLeitores = JSON.parse(localStorage.getItem('ds_students') || '[]');
 let usuarioAtual = null;
-let leitores = JSON.parse(localStorage.getItem('ds_readers') || 'null') || dadosAntigosLeitores.map(item => ({
-  id: item.id, nome: item.name, matricula: item.registration || '', tipo: 'Aluno', turma: item.className || ''
-}));
-let livros = JSON.parse(localStorage.getItem('ds_library') || '[]');
-let emprestimos = JSON.parse(localStorage.getItem('ds_loans') || '[]');
-let reservas = JSON.parse(localStorage.getItem('ds_reservations') || '[]');
+let leitores = [];
+let livros = [];
+let emprestimos = [];
+let reservas = [];
+let dadosImportacaoArquivo = null;
 let filtroAtual = 'ativos';
 let emprestimoEmDevolucao = null;
 let leitorEmEdicao = null;
@@ -106,19 +119,138 @@ function formatarData(valor) {
   return valor ? lerData(valor).toLocaleDateString('pt-BR') : '—';
 }
 
-function salvarDados() {
-  localStorage.setItem('ds_readers', JSON.stringify(leitores));
-  localStorage.setItem('ds_library', JSON.stringify(livros));
-  localStorage.setItem('ds_loans', JSON.stringify(emprestimos));
-  localStorage.setItem('ds_reservations', JSON.stringify(reservas));
+async function requisitarApi(caminho, opcoes = {}) {
+  let resposta;
+  try {
+    resposta = await fetch(caminho, {
+      credentials: 'same-origin',
+      ...opcoes,
+      headers: opcoes.body
+        ? { 'Content-Type': 'application/json', ...(opcoes.headers || {}) }
+        : opcoes.headers
+    });
+  } catch {
+    const mensagem = location.protocol === 'file:'
+      ? 'Inicie o projeto com “npm start” e abra o endereço exibido no terminal.'
+      : 'Não foi possível acessar o servidor. Verifique sua conexão.';
+    const erro = new Error(mensagem);
+    erro.status = 0;
+    throw erro;
+  }
+  const tipo = resposta.headers.get('content-type') || '';
+  const dados = tipo.includes('application/json') ? await resposta.json() : null;
+  if (!resposta.ok) {
+    const erro = new Error(dados?.message || 'Não foi possível concluir a operação.');
+    erro.status = resposta.status;
+    erro.code = dados?.code;
+    throw erro;
+  }
+  return dados;
 }
 
-function gerarIdTecnico(colecao) {
-  const idsUsados = new Set(colecao.map(item => Number(item.id)));
-  let id = Date.now();
-  while (idsUsados.has(id)) id += 1;
-  return id;
+function aplicarEstado(dados = {}) {
+  leitores = Array.isArray(dados.readers) ? dados.readers : [];
+  livros = Array.isArray(dados.books) ? dados.books : [];
+  emprestimos = Array.isArray(dados.loans) ? dados.loans : [];
+  reservas = Array.isArray(dados.reservations) ? dados.reservations : [];
 }
+
+function possuiDados(estado) {
+  return ['readers', 'books', 'loans', 'reservations'].some(chave => estado[chave]?.length);
+}
+
+async function carregarDadosServidor({ migrarLocais = false } = {}) {
+  let estado = await requisitarApi('/api/state');
+  const origemMigracao = dadosImportacaoArquivo || dadosLocaisLegados;
+  const migracaoLocalPendente = dadosImportacaoArquivo || !localStorage.getItem('ds_postgres_migrated');
+  if (migrarLocais && !possuiDados(estado) && possuiDados(origemMigracao) && migracaoLocalPendente) {
+    const migracao = await requisitarApi('/api/migrate-local', {
+      method: 'POST',
+      body: JSON.stringify(origemMigracao)
+    });
+    estado = migracao.state;
+    if (migracao.migrated) {
+      localStorage.setItem('ds_postgres_migrated', new Date().toISOString());
+      dadosImportacaoArquivo = null;
+      mostrarAviso('Dados salvos anteriormente foram migrados para o PostgreSQL.');
+    }
+  } else if (migrarLocais && dadosImportacaoArquivo && possuiDados(estado)) {
+    $('#estadoMigracaoLogin').textContent = 'O banco já possui registros; o backup não foi importado para evitar sobrescrever os dados existentes.';
+  }
+  aplicarEstado(estado);
+  return estado;
+}
+
+async function atualizarDepoisDaOperacao() {
+  await carregarDadosServidor();
+  renderizarTudo();
+}
+
+function tratarErroOperacao(erro, destino = null) {
+  if (erro.status === 401 && !destino) {
+    encerrarSessaoVisual();
+    mostrarAviso('Sua sessão expirou. Entre novamente.');
+    return;
+  }
+  if (destino) destino.textContent = erro.message;
+  else mostrarAviso(erro.message);
+}
+
+function preencherUsuario(usuario) {
+  usuarioAtual = usuario;
+  $('#nomeUsuario').textContent = usuario.nome;
+  $('#perfilUsuario').textContent = usuario.perfil;
+  $('#inicialUsuario').textContent = usuario.perfil.charAt(0);
+  $$('.somente-diretor').forEach(item => item.classList.toggle('oculto', usuario.perfil !== 'Diretor'));
+}
+
+function exibirSistema(usuario) {
+  preencherUsuario(usuario);
+  $('#paginaLogin').classList.add('oculto');
+  $('#sistema').classList.remove('oculto');
+  renderizarTudo();
+}
+
+function encerrarSessaoVisual() {
+  usuarioAtual = null;
+  leitores = [];
+  livros = [];
+  emprestimos = [];
+  reservas = [];
+  $('#sistema').classList.add('oculto');
+  $('#paginaLogin').classList.remove('oculto');
+  $('#formularioLogin').reset();
+}
+
+const botaoExportarDados = $('#exportarDadosLocais');
+botaoExportarDados.classList.toggle('oculto', !possuiDados(dadosLocaisLegados));
+botaoExportarDados.addEventListener('click', () => {
+  const conteudo = JSON.stringify({ exportedAt: new Date().toISOString(), ...dadosLocaisLegados }, null, 2);
+  const endereco = URL.createObjectURL(new Blob([conteudo], { type: 'application/json' }));
+  const link = document.createElement('a');
+  link.href = endereco;
+  link.download = `ds-legacy-backup-${dataLocal()}.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(endereco), 1_000);
+  $('#estadoMigracaoLogin').textContent = 'Backup criado. Abra a nova aplicação, selecione esse arquivo e depois entre.';
+});
+
+$('#arquivoMigracao').addEventListener('change', async evento => {
+  const arquivo = evento.target.files[0];
+  if (!arquivo) return;
+  try {
+    const dados = JSON.parse(await arquivo.text());
+    if (!dados || typeof dados !== 'object' || !['readers', 'books', 'loans', 'reservations'].every(chave => Array.isArray(dados[chave]))) {
+      throw new Error('O arquivo não possui o formato de backup do DS Legacy.');
+    }
+    dadosImportacaoArquivo = dados;
+    $('#estadoMigracaoLogin').textContent = `Backup “${arquivo.name}” selecionado. Entre para importá-lo no banco vazio.`;
+  } catch (erro) {
+    dadosImportacaoArquivo = null;
+    evento.target.value = '';
+    $('#estadoMigracaoLogin').textContent = erro.message || 'Não foi possível ler o arquivo selecionado.';
+  }
+});
 
 function gerarIdentificador(prefixo, colecao, campo) {
   const formatoAutomatico = new RegExp(`^${prefixo}-(\\d+)$`, 'i');
@@ -170,25 +302,6 @@ function identificadorLeitorParaTipo(leitor, tipo) {
   return identificadorLeitorDisponivel(candidato, leitor) ? candidato : gerarIdLeitor(tipo);
 }
 
-// Completa IDs ausentes e ajusta apenas IDs automáticos ao tipo atual do leitor.
-function completarEAtualizarIdentificadores() {
-  let alterado = false;
-  leitores.forEach(leitor => {
-    const identificadorAtualizado = identificadorLeitorParaTipo(leitor, leitor.tipo);
-    if (identificadorAtualizado === String(leitor.matricula ?? '').trim()) return;
-    leitor.matricula = identificadorAtualizado;
-    alterado = true;
-  });
-  livros.forEach(livro => {
-    if (String(livro.code ?? '').trim()) return;
-    livro.code = gerarIdLivro();
-    alterado = true;
-  });
-  if (alterado) salvarDados();
-}
-
-completarEAtualizarIdentificadores();
-
 // Mostra um campo de texto quando uma opção "Outro" é escolhida.
 $$('[data-campo-outro]').forEach(seletor => {
   seletor.addEventListener('change', () => atualizarCampoOutro(seletor));
@@ -224,30 +337,39 @@ $('#mostrarSenha').addEventListener('click', () => {
   $('#senha').type = $('#senha').type === 'password' ? 'text' : 'password';
 });
 
-$('#formularioLogin').addEventListener('submit', evento => {
+$('#formularioLogin').addEventListener('submit', async evento => {
   evento.preventDefault();
-  const chave = $('#usuario').value.trim().toLowerCase();
-  const usuario = usuarios[chave];
-  if (!usuario || usuario.senha !== $('#senha').value) {
-    $('#erroLogin').textContent = 'Usuário ou senha incorretos.';
-    return;
-  }
-  usuarioAtual = { ...usuario, chave };
+  const botao = $('#formularioLogin .botao-principal');
+  const textoOriginal = botao.textContent;
+  botao.disabled = true;
+  botao.textContent = 'Conectando...';
   $('#erroLogin').textContent = '';
-  $('#paginaLogin').classList.add('oculto');
-  $('#sistema').classList.remove('oculto');
-  $('#nomeUsuario').textContent = usuario.nome;
-  $('#perfilUsuario').textContent = usuario.perfil;
-  $('#inicialUsuario').textContent = usuario.perfil.charAt(0);
-  $$('.somente-diretor').forEach(item => item.classList.toggle('oculto', usuario.perfil !== 'Diretor'));
-  renderizarTudo();
+  try {
+    const resultado = await requisitarApi('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: $('#usuario').value.trim(),
+        password: $('#senha').value
+      })
+    });
+    await carregarDadosServidor({ migrarLocais: true });
+    exibirSistema(resultado.user);
+  } catch (erro) {
+    tratarErroOperacao(erro, $('#erroLogin'));
+  } finally {
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+  }
 });
 
-$('#botaoSair').addEventListener('click', () => {
-  usuarioAtual = null;
-  $('#sistema').classList.add('oculto');
-  $('#paginaLogin').classList.remove('oculto');
-  $('#formularioLogin').reset();
+$('#botaoSair').addEventListener('click', async () => {
+  try {
+    await requisitarApi('/api/auth/logout', { method: 'POST' });
+  } catch (erro) {
+    if (erro.status !== 401) mostrarAviso(erro.message);
+  } finally {
+    encerrarSessaoVisual();
+  }
 });
 
 const nomesPaginas = { painel: 'Painel', leitores: 'Leitores', biblioteca: 'Estoque', emprestimos: 'Empréstimos', reservas: 'Reservas', relatorios: 'Relatórios' };
@@ -329,17 +451,27 @@ $('#pesquisaLeitorReserva').addEventListener('input', evento => {
   preencherLeitoresReserva(leitores.filter(leitor => leitorCorrespondePesquisa(leitor, termo)));
 });
 
-$('#salvarReserva').addEventListener('click', evento => {
+$('#salvarReserva').addEventListener('click', async evento => {
   evento.preventDefault();
   if (!$('#formularioReserva').reportValidity()) return;
   const bookId = Number($('#livroReserva').value);
   const readerId = Number($('#leitorReserva').value);
   if (reservas.some(item => item.bookId === bookId && item.readerId === readerId && item.status === 'ativa')) return mostrarAviso('Este leitor já está na fila desse livro.');
-  reservas.push({ id: Date.now(), bookId, readerId, date: dataLocal(), status: 'ativa' });
-  salvarDados();
-  $('#janelaReserva').close();
-  renderizarTudo();
-  mostrarAviso(`Reserva adicionada na posição ${reservasAtivasDoLivro(bookId).length} da fila.`);
+  const botao = $('#salvarReserva');
+  botao.disabled = true;
+  try {
+    await requisitarApi('/api/reservations', {
+      method: 'POST',
+      body: JSON.stringify({ bookId, readerId })
+    });
+    await atualizarDepoisDaOperacao();
+    $('#janelaReserva').close();
+    mostrarAviso(`Reserva adicionada na posição ${reservasAtivasDoLivro(bookId).length} da fila.`);
+  } catch (erro) {
+    tratarErroOperacao(erro);
+  } finally {
+    botao.disabled = false;
+  }
 });
 
 function definirOpcaoOuOutro(idSeletor, valor) {
@@ -381,37 +513,37 @@ function abrirFormularioLivro(livroId = null) {
   $('#janelaBiblioteca').showModal();
 }
 
-$('#salvarLeitor').addEventListener('click', evento => {
+$('#salvarLeitor').addEventListener('click', async evento => {
   evento.preventDefault();
   if (!$('#formularioLeitor').reportValidity()) return;
   const editando = Boolean(leitorEmEdicao);
   const tipo = valorComOutro('tipoLeitor');
-  let matricula = identificadorLeitorParaTipo(leitorEmEdicao, tipo);
-  if (!editando) {
-    const idExibido = $('#matriculaLeitor').value.trim();
-    const prefixo = prefixoIdLeitor(tipo);
-    const formatoEsperado = new RegExp(`^${prefixo}-\\d+$`, 'i');
-    const idDisponivel = formatoEsperado.test(idExibido) && identificadorLeitorDisponivel(idExibido);
-    matricula = idDisponivel ? idExibido : gerarIdLeitor(tipo);
-  }
   const dadosLeitor = {
     nome: $('#nomeLeitor').value.trim(),
-    matricula,
     tipo,
     turma: valorComOutro('turmaLeitor')
   };
-  if (editando) Object.assign(leitorEmEdicao, dadosLeitor);
-  else leitores.push({ id: gerarIdTecnico(leitores), ...dadosLeitor });
-  salvarDados();
-  $('#formularioLeitor').reset();
-  limparCamposOutro($('#formularioLeitor'));
-  $('#janelaLeitor').close();
-  renderizarTudo();
-  mostrarAviso(editando ? 'Informações do leitor atualizadas.' : `Leitor cadastrado com o ID ${matricula}.`);
-  leitorEmEdicao = null;
+  const botao = $('#salvarLeitor');
+  botao.disabled = true;
+  try {
+    const resultado = await requisitarApi(editando ? `/api/readers/${leitorEmEdicao.id}` : '/api/readers', {
+      method: editando ? 'PUT' : 'POST',
+      body: JSON.stringify(dadosLeitor)
+    });
+    await atualizarDepoisDaOperacao();
+    $('#formularioLeitor').reset();
+    limparCamposOutro($('#formularioLeitor'));
+    $('#janelaLeitor').close();
+    mostrarAviso(editando ? 'Informações do leitor atualizadas.' : `Leitor cadastrado com o ID ${resultado.reader.matricula}.`);
+    leitorEmEdicao = null;
+  } catch (erro) {
+    tratarErroOperacao(erro);
+  } finally {
+    botao.disabled = false;
+  }
 });
 
-$('#salvarItemBiblioteca').addEventListener('click', evento => {
+$('#salvarItemBiblioteca').addEventListener('click', async evento => {
   evento.preventDefault();
   if (!$('#formularioBiblioteca').reportValidity()) return;
   const idExibido = $('#codigoLivro').value.trim();
@@ -432,18 +564,26 @@ $('#salvarItemBiblioteca').addEventListener('click', evento => {
   if (editando) {
     const indisponiveis = Number(livroEmEdicao.quantity) - Number(livroEmEdicao.available);
     if (quantidade < indisponiveis) return mostrarAviso(`A quantidade não pode ser menor que ${indisponiveis}.`);
-    Object.assign(livroEmEdicao, dadosLivro, { available: quantidade - indisponiveis });
-  } else {
-    livros.push({ id: gerarIdTecnico(livros), ...dadosLivro, available: quantidade, lostCopies: 0 });
   }
-  salvarDados();
-  $('#formularioBiblioteca').reset();
-  limparCamposOutro($('#formularioBiblioteca'));
-  $('#quantidadeLivro').value = 1;
-  $('#janelaBiblioteca').close();
-  renderizarTudo();
-  mostrarAviso(editando ? 'Livro e estoque atualizados.' : `Livro cadastrado com o ID ${codigo}.`);
-  livroEmEdicao = null;
+  const botao = $('#salvarItemBiblioteca');
+  botao.disabled = true;
+  try {
+    const resultado = await requisitarApi(editando ? `/api/books/${livroEmEdicao.id}` : '/api/books', {
+      method: editando ? 'PUT' : 'POST',
+      body: JSON.stringify(dadosLivro)
+    });
+    await atualizarDepoisDaOperacao();
+    $('#formularioBiblioteca').reset();
+    limparCamposOutro($('#formularioBiblioteca'));
+    $('#quantidadeLivro').value = 1;
+    $('#janelaBiblioteca').close();
+    mostrarAviso(editando ? 'Livro e estoque atualizados.' : `Livro cadastrado com o ID ${resultado.book.code}.`);
+    livroEmEdicao = null;
+  } catch (erro) {
+    tratarErroOperacao(erro);
+  } finally {
+    botao.disabled = false;
+  }
 });
 
 function impedimentoExclusao(tipo, id) {
@@ -475,15 +615,9 @@ function abrirConfirmacaoExclusao(tipo, id) {
   $('#senhaExclusao').focus();
 }
 
-$('#formularioExclusao').addEventListener('submit', evento => {
+$('#formularioExclusao').addEventListener('submit', async evento => {
   evento.preventDefault();
   if (!$('#formularioExclusao').reportValidity() || !exclusaoPendente) return;
-  const contaConectada = usuarios[usuarioAtual?.chave];
-  if (!contaConectada || $('#senhaExclusao').value !== contaConectada.senha) {
-    $('#erroExclusao').textContent = 'Senha incorreta. Digite a senha da conta que está conectada.';
-    $('#senhaExclusao').select();
-    return;
-  }
   const { tipo, id } = exclusaoPendente;
   const impedimento = impedimentoExclusao(tipo, id);
   if (impedimento) {
@@ -497,12 +631,24 @@ $('#formularioExclusao').addEventListener('submit', evento => {
     $('#erroExclusao').textContent = tipo === 'leitor' ? 'Este leitor já foi excluído.' : 'Este livro já foi excluído.';
     return;
   }
-  if (tipo === 'leitor') leitores = leitores.filter(leitor => leitor.id !== id);
-  else livros = livros.filter(livro => livro.id !== id);
-  salvarDados();
-  $('#janelaExclusao').close();
-  renderizarTudo();
-  mostrarAviso(tipo === 'leitor' ? 'Leitor excluído com sucesso.' : 'Livro excluído com sucesso.');
+  const botao = $('#confirmarExclusao');
+  botao.disabled = true;
+  $('#erroExclusao').textContent = '';
+  try {
+    const recurso = tipo === 'leitor' ? 'readers' : 'books';
+    await requisitarApi(`/api/${recurso}/${id}/delete`, {
+      method: 'POST',
+      body: JSON.stringify({ password: $('#senhaExclusao').value })
+    });
+    await atualizarDepoisDaOperacao();
+    $('#janelaExclusao').close();
+    mostrarAviso(tipo === 'leitor' ? 'Leitor excluído com sucesso.' : 'Livro excluído com sucesso.');
+  } catch (erro) {
+    tratarErroOperacao(erro, $('#erroExclusao'));
+    if (erro.status === 401) $('#senhaExclusao').select();
+  } finally {
+    botao.disabled = false;
+  }
 });
 
 $('#janelaExclusao').addEventListener('close', () => {
@@ -583,7 +729,7 @@ $('#pesquisaLivroEmprestimo').addEventListener('input', evento => {
   preencherOpcoesLivros(encontrados, selecionado);
 });
 
-$('#salvarEmprestimo').addEventListener('click', evento => {
+$('#salvarEmprestimo').addEventListener('click', async evento => {
   evento.preventDefault();
   if (!$('#formularioEmprestimo').reportValidity()) return;
   const leitorId = Number($('#leitorEmprestimo').value);
@@ -598,14 +744,27 @@ $('#salvarEmprestimo').addEventListener('click', evento => {
   if (lerData($('#dataPrazo').value) < lerData($('#dataEmprestimo').value)) return mostrarAviso('O prazo deve ser posterior ao empréstimo.');
   const livro = livros.find(item => item.id === livroId);
   if (!livro || livro.available < 1) return mostrarAviso('Este livro não está mais disponível.');
-  livro.available -= 1;
-  emprestimos.unshift({ id: Date.now(), readerId: leitorId, bookId: livroId, loanDate: $('#dataEmprestimo').value, dueDate: $('#dataPrazo').value, returnDate: null, penaltyUntil: null, responsible: usuarioAtual.nome });
-  if (fila.length && fila[0].readerId === leitorId) fila[0].status = 'atendida';
-  salvarDados();
-  $('#formularioEmprestimo').reset();
-  $('#janelaEmprestimo').close();
-  renderizarTudo();
-  mostrarAviso('Empréstimo registrado com sucesso.');
+  const botao = $('#salvarEmprestimo');
+  botao.disabled = true;
+  try {
+    await requisitarApi('/api/loans', {
+      method: 'POST',
+      body: JSON.stringify({
+        readerId,
+        bookId,
+        loanDate: $('#dataEmprestimo').value,
+        dueDate: $('#dataPrazo').value
+      })
+    });
+    await atualizarDepoisDaOperacao();
+    $('#formularioEmprestimo').reset();
+    $('#janelaEmprestimo').close();
+    mostrarAviso('Empréstimo registrado com sucesso.');
+  } catch (erro) {
+    tratarErroOperacao(erro);
+  } finally {
+    botao.disabled = false;
+  }
 });
 
 function abrirFormularioDevolucao(emprestimoId) {
@@ -629,39 +788,37 @@ function atualizarRegraAdvertencia() {
 
 $('#estadoDevolucao').addEventListener('change', atualizarRegraAdvertencia);
 
-$('#confirmarDevolucao').addEventListener('click', evento => {
+$('#confirmarDevolucao').addEventListener('click', async evento => {
   evento.preventDefault();
   atualizarRegraAdvertencia();
   if (!$('#formularioDevolucao').reportValidity()) return;
-  registrarDevolucao(emprestimoEmDevolucao, valorComOutro('estadoDevolucao'), $('#observacaoDevolucao').value.trim());
-  $('#janelaDevolucao').close();
+  const botao = $('#confirmarDevolucao');
+  botao.disabled = true;
+  try {
+    await registrarDevolucao(emprestimoEmDevolucao, valorComOutro('estadoDevolucao'), $('#observacaoDevolucao').value.trim());
+    $('#janelaDevolucao').close();
+  } catch (erro) {
+    tratarErroOperacao(erro);
+  } finally {
+    botao.disabled = false;
+  }
 });
 
-function registrarDevolucao(emprestimoId, estado, observacao) {
+async function registrarDevolucao(emprestimoId, estado, observacao) {
   const emprestimo = emprestimos.find(item => item.id === emprestimoId);
   if (!emprestimo || emprestimo.returnDate) return;
-  const hoje = dataLocal();
-  emprestimo.returnDate = hoje;
-  emprestimo.returnCondition = estado;
-  emprestimo.returnNote = observacao;
-  emprestimo.warning = estado !== 'Bom';
-  emprestimo.bookLost = estado === 'Livro perdido';
-  const atrasado = lerData(hoje) > lerData(emprestimo.dueDate);
-  if (atrasado) {
-    const fimMulta = new Date();
-    fimMulta.setMonth(fimMulta.getMonth() + 1);
-    emprestimo.penaltyUntil = dataLocal(fimMulta);
-  }
-  const livro = livros.find(item => item.id === emprestimo.bookId);
-  if (livro && emprestimo.bookLost) livro.lostCopies = Number(livro.lostCopies || 0) + 1;
-  if (livro && !emprestimo.bookLost) livro.available = Math.min(Number(livro.quantity), Number(livro.available) + 1);
-  salvarDados();
-  renderizarTudo();
-  if (emprestimo.bookLost && atrasado) return mostrarAviso(`Livro perdido e indisponível. Leitor advertido e bloqueado até ${formatarData(emprestimo.penaltyUntil)}.`);
-  if (emprestimo.bookLost) return mostrarAviso('Livro registrado como perdido e indisponível. Advertência adicionada ao leitor.');
-  if (emprestimo.warning && atrasado) return mostrarAviso(`Advertência registrada e leitor bloqueado até ${formatarData(emprestimo.penaltyUntil)}.`);
-  if (emprestimo.warning) return mostrarAviso('Devolução concluída e advertência registrada para o leitor.');
-  mostrarAviso(atrasado ? `Devolução atrasada: leitor bloqueado até ${formatarData(emprestimo.penaltyUntil)}.` : 'Devolução registrada em bom estado.');
+  const resultado = await requisitarApi(`/api/loans/${emprestimoId}/return`, {
+    method: 'POST',
+    body: JSON.stringify({ condition: estado, note: observacao })
+  });
+  await atualizarDepoisDaOperacao();
+  const devolucao = resultado.loan;
+  const atrasado = Boolean(devolucao.penaltyUntil);
+  if (devolucao.bookLost && atrasado) return mostrarAviso(`Livro perdido e indisponível. Leitor advertido e bloqueado até ${formatarData(devolucao.penaltyUntil)}.`);
+  if (devolucao.bookLost) return mostrarAviso('Livro registrado como perdido e indisponível. Advertência adicionada ao leitor.');
+  if (devolucao.warning && atrasado) return mostrarAviso(`Advertência registrada e leitor bloqueado até ${formatarData(devolucao.penaltyUntil)}.`);
+  if (devolucao.warning) return mostrarAviso('Devolução concluída e advertência registrada para o leitor.');
+  mostrarAviso(atrasado ? `Devolução atrasada: leitor bloqueado até ${formatarData(devolucao.penaltyUntil)}.` : 'Devolução registrada em bom estado.');
 }
 
 function contarAdvertencias(leitorId) {
@@ -696,7 +853,7 @@ function abrirFormularioRenovacao(emprestimoId) {
   $('#janelaRenovacao').showModal();
 }
 
-$('#confirmarRenovacao').addEventListener('click', evento => {
+$('#confirmarRenovacao').addEventListener('click', async evento => {
   evento.preventDefault();
   if (!$('#formularioRenovacao').reportValidity()) return;
   const emprestimo = emprestimos.find(item => item.id === emprestimoEmRenovacao);
@@ -705,14 +862,22 @@ $('#confirmarRenovacao').addEventListener('click', evento => {
   if (livroPossuiReservaAtiva(emprestimo.bookId)) return mostrarAviso('Este livro possui uma reserva ativa e não pode ser renovado.');
   const novoPrazo = $('#novaDataPrazo').value;
   if (lerData(novoPrazo) <= lerData(emprestimo.dueDate)) return mostrarAviso('O novo prazo deve ser posterior ao prazo atual.');
-  if (!Array.isArray(emprestimo.renewals)) emprestimo.renewals = [];
-  emprestimo.renewals.push({ previousDueDate: emprestimo.dueDate, newDueDate: novoPrazo, date: dataLocal(), responsible: usuarioAtual.nome });
-  emprestimo.dueDate = novoPrazo;
-  salvarDados();
-  $('#janelaRenovacao').close();
-  emprestimoEmRenovacao = null;
-  renderizarTudo();
-  mostrarAviso(`Empréstimo renovado até ${formatarData(novoPrazo)}.`);
+  const botao = $('#confirmarRenovacao');
+  botao.disabled = true;
+  try {
+    await requisitarApi(`/api/loans/${emprestimoEmRenovacao}/renew`, {
+      method: 'POST',
+      body: JSON.stringify({ newDueDate: novoPrazo })
+    });
+    await atualizarDepoisDaOperacao();
+    $('#janelaRenovacao').close();
+    emprestimoEmRenovacao = null;
+    mostrarAviso(`Empréstimo renovado até ${formatarData(novoPrazo)}.`);
+  } catch (erro) {
+    tratarErroOperacao(erro);
+  } finally {
+    botao.disabled = false;
+  }
 });
 
 function renderizarBiblioteca(lista = livros) {
@@ -732,13 +897,16 @@ function renderizarBiblioteca(lista = livros) {
   $$('.excluir-livro').forEach(botao => botao.addEventListener('click', () => abrirConfirmacaoExclusao('livro', botao.dataset.id)));
 }
 
-function cancelarReserva(reservaId) {
+async function cancelarReserva(reservaId) {
   const reserva = reservas.find(item => item.id === reservaId);
   if (!reserva || reserva.status !== 'ativa') return;
-  reserva.status = 'cancelada';
-  salvarDados();
-  renderizarTudo();
-  mostrarAviso('Reserva cancelada. A fila foi atualizada.');
+  try {
+    await requisitarApi(`/api/reservations/${reservaId}/cancel`, { method: 'POST' });
+    await atualizarDepoisDaOperacao();
+    mostrarAviso('Reserva cancelada. A fila foi atualizada.');
+  } catch (erro) {
+    tratarErroOperacao(erro);
+  }
 }
 
 function emprestarReserva(reservaId) {
@@ -946,3 +1114,15 @@ $('#botaoNotificacao').addEventListener('click', () => {
 });
 $('#imprimirRelatorio').addEventListener('click', () => window.print());
 $('#textoHoje').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+
+async function restaurarSessao() {
+  try {
+    const resultado = await requisitarApi('/api/auth/session');
+    await carregarDadosServidor({ migrarLocais: true });
+    exibirSistema(resultado.user);
+  } catch (erro) {
+    if (erro.status !== 401) $('#erroLogin').textContent = erro.message;
+  }
+}
+
+restaurarSessao();

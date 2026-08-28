@@ -1,0 +1,28 @@
+{
+  "name": "ds-legacy-biblioteca",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Sistema de gestão de biblioteca escolar com PostgreSQL.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "db:init": "node scripts/init-db.js",
+    "check": "node --check server.js && node --check src/database.js && node --check src/library-service.js && node --check interacao.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "helmet": "^8.3.0",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.7"
+  }
+}

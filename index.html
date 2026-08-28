@@ -13,9 +13,18 @@
 <body>
   <section class="pagina-login" id="paginaLogin">
     <div class="informacoes-login">
-      <img src="images/1000043352.jpg" alt="Logo DS Legacy">
-      <h1>DS Legacy</h1>
-      <p>Gestão simples e segura para a biblioteca escolar.</p>
+      <div class="conteudo-login-institucional">
+        <span class="selo-login">Biblioteca escolar inteligente</span>
+        <img src="images/1000043352.jpg" alt="Logo DS Legacy">
+        <span class="chamada-login">CONHECIMENTO QUE CIRCULA</span>
+        <h1>DS Legacy</h1>
+        <p>Uma biblioteca viva, organizada e próxima de toda a comunidade escolar.</p>
+        <div class="recursos-login" aria-label="Recursos do sistema">
+          <span>Acervo organizado</span>
+          <span>Leitores acompanhados</span>
+          <span>Histórias preservadas</span>
+        </div>
+      </div>
     </div>
     <form class="cartao-login" id="formularioLogin">
       <h2>Entrar no sistema</h2>
@@ -26,30 +35,39 @@
       <div class="caixa-senha"><input id="senha" name="senha" type="password" autocomplete="current-password" required><button type="button" id="mostrarSenha" aria-label="Mostrar senha">👁</button></div>
       <p class="erro-login" id="erroLogin" role="alert"></p>
       <button class="botao-principal" type="submit">Acessar</button>
-      <div class="contas-teste"><strong>Contas para teste</strong><span>Biblioteca: testebiblioteca / Biblioteca@123</span><span>Diretor: testediretor / Diretor@123</span></div>
+      <div class="contas-teste"><strong>Acesso protegido pelo servidor</strong><span>Use as credenciais fornecidas pela administração da biblioteca.</span><span>Os acessos iniciais podem ser configurados no arquivo <code>.env</code>.</span></div>
+      <div class="migracao-login">
+        <strong>Migração do protótipo anterior</strong>
+        <span id="estadoMigracaoLogin">Se os dados estavam em outro endereço, exporte o arquivo no navegador antigo e selecione-o aqui antes de entrar.</span>
+        <div>
+          <button class="botao-migracao oculto" id="exportarDadosLocais" type="button">Exportar dados locais</button>
+          <label class="botao-migracao" for="arquivoMigracao">Selecionar backup</label>
+          <input class="oculto" id="arquivoMigracao" type="file" accept="application/json,.json">
+        </div>
+      </div>
     </form>
   </section>
 
   <div class="sistema oculto" id="sistema">
     <aside class="barra-lateral" id="barra-lateral">
-      <div class="marca"><img src="images/1000043352.jpg" alt="Logo DS Legacy"><span><b>DS</b> Legacy</span></div>
-      <nav>
-        <button class="item-navegacao ativo" data-pagina="painel">▦ <span>Painel</span></button>
-        <button class="item-navegacao" data-pagina="leitores">👤<span>Leitores</span></button>
-        <button class="item-navegacao" data-pagina="biblioteca">▥ <span>Estoque</span></button>
-        <button class="item-navegacao" data-pagina="emprestimos">⇄ <span>Empréstimos</span></button>
-        <button class="item-navegacao" data-pagina="reservas">⧗ <span>Reservas</span></button>
-        <button class="item-navegacao somente-diretor" data-pagina="relatorios">▤ <span>Relatórios</span></button>
+      <div class="marca"><img src="images/1000043352.jpg" alt="Logo DS Legacy"><span class="marca-texto"><b>DS Legacy</b><small>Biblioteca escolar</small></span></div>
+      <nav aria-label="Navegação principal">
+        <button class="item-navegacao ativo" data-pagina="painel"><span class="icone-navegacao" aria-hidden="true">⌂</span><span>Painel</span></button>
+        <button class="item-navegacao" data-pagina="leitores"><span class="icone-navegacao" aria-hidden="true">♙</span><span>Leitores</span></button>
+        <button class="item-navegacao" data-pagina="biblioteca"><span class="icone-navegacao" aria-hidden="true">▥</span><span>Estoque</span></button>
+        <button class="item-navegacao" data-pagina="emprestimos"><span class="icone-navegacao" aria-hidden="true">⇄</span><span>Empréstimos</span></button>
+        <button class="item-navegacao" data-pagina="reservas"><span class="icone-navegacao" aria-hidden="true">◷</span><span>Reservas</span></button>
+        <button class="item-navegacao somente-diretor" data-pagina="relatorios"><span class="icone-navegacao" aria-hidden="true">▤</span><span>Relatórios</span></button>
       </nav>
       <div class="usuario-logado"><div class="circulo-usuario" id="inicialUsuario">U</div><div><strong id="nomeUsuario">Usuário</strong><span id="perfilUsuario">Perfil</span></div></div>
       <button class="sair" id="botaoSair">↪ Sair</button>
     </aside>
 
     <main class="conteudo-principal">
-      <header class="barra-superior"><button class="menu-celular" id="menuCelular">☰</button><div><h1 id="tituloPagina">Painel</h1><p id="textoHoje"></p></div><button class="botao-notificacao" id="botaoNotificacao">🔔 <span id="quantidadeNotificacoes">0</span></button></header>
+      <header class="barra-superior"><button class="menu-celular" id="menuCelular" aria-label="Abrir menu">☰</button><div class="contexto-pagina"><span>DS LEGACY • ACERVO ESCOLAR</span><h1 id="tituloPagina">Painel</h1><p id="textoHoje"></p></div><button class="botao-notificacao" id="botaoNotificacao" aria-label="Notificações">♢ <span id="quantidadeNotificacoes">0</span></button></header>
 
       <section class="pagina ativo" id="painel">
-        <div class="cartao-boas-vindas"><div><span>GESTÃO DA BIBLIOTECA</span><h2>Bem-vindo ao DS Legacy</h2><p>Controle o Estoque, os empréstimos e as devoluções em um só lugar.</p></div><button class="botao-branco abrir-emprestimo">+ Novo empréstimo</button></div>
+        <div class="cartao-boas-vindas"><div class="texto-boas-vindas"><span>GESTÃO DA BIBLIOTECA</span><h2>Bem-vindo ao DS Legacy</h2><p>Organize o acervo, acompanhe leitores e mantenha o conhecimento sempre em circulação.</p></div><div class="ilustracao-biblioteca" aria-hidden="true"><i></i><i></i><i></i><b></b></div><button class="botao-branco abrir-emprestimo">+ Novo empréstimo</button></div>
         <div class="cartoes">
           <article><div class="icone-cartao azul">▥</div><div><span>Títulos no Estoque</span><strong id="totalTitulos">0</strong></div></article>
           <article><div class="icone-cartao laranja">⇄</div><div><span>Empréstimos ativos</span><strong id="totalEmprestimos">0</strong></div></article>
