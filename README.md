@@ -111,13 +111,25 @@ Acesse `http://localhost:8000`. A porta `8000` também preserva a origem recomen
 
 ## Usar Docker Compose
 
-O arquivo `compose.yaml` inicia a aplicação e um PostgreSQL persistente:
+O arquivo `compose.yaml` inicia a aplicação e um PostgreSQL persistente. As senhas ficam em um arquivo privado, fora do Git:
 
-```bash
-docker compose up --build
+```powershell
+Copy-Item .env.docker.example .env.docker
+notepad .env.docker
+docker compose --env-file .env.docker up -d --build
 ```
 
-Antes de usar fora de desenvolvimento, troque todas as senhas presentes no arquivo ou forneça-as por variáveis protegidas do ambiente de hospedagem.
+Troque todas as senhas do `.env.docker` antes de iniciar. Por padrão, o site responde somente neste computador em `http://localhost:8000`, e a porta do PostgreSQL não é publicada.
+
+## Hospedar no computador do trabalho
+
+O computador do trabalho pode hospedar o site e o banco juntos com Docker Compose. Há três modos de acesso:
+
+- no próprio computador, por `http://localhost:8000`;
+- em outros computadores da rede local, liberando apenas a porta da aplicação;
+- pela internet, usando uma URL HTTPS e um túnel, sem expor o PostgreSQL ou abrir portas no roteador.
+
+O procedimento completo para instalar, proteger, migrar, atualizar e fazer backup está em [docs/IMPLANTACAO_PC_TRABALHO.md](docs/IMPLANTACAO_PC_TRABALHO.md).
 
 ## Publicar para acesso de qualquer lugar
 
@@ -186,6 +198,12 @@ pg_dump "$DATABASE_URL" --format=custom --file=ds_legacy.backup
 
 Teste também a restauração em um banco separado antes de depender do backup em produção.
 
+Na instalação Docker do computador do trabalho, use o script pronto:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/backup-docker.ps1
+```
+
 ## Scripts
 
 | Comando | Ação |
@@ -194,12 +212,16 @@ Teste também a restauração em um banco separado antes de depender do backup e
 | `npm run dev` | Inicia com recarregamento durante o desenvolvimento |
 | `npm run db:init` | Cria tabelas e sincroniza contas administrativas |
 | `npm run check` | Verifica a sintaxe dos arquivos JavaScript |
+| `npm test` | Executa os testes da API, do banco e das regras de negócio |
+| `scripts/backup-docker.ps1` | Cria um backup do PostgreSQL da instalação Docker |
 
 ## Estrutura do projeto
 
 ```text
 Apresentacao_tcc/
 ├── database/schema.sql       # Esquema PostgreSQL
+├── docs/IMPLANTACAO_PC_TRABALHO.md # Guia do servidor Windows
+├── scripts/backup-docker.ps1 # Backup do PostgreSQL em Docker
 ├── scripts/init-db.js        # Inicialização do banco e das contas
 ├── src/database.js           # Pool de conexão e transações
 ├── src/library-service.js    # Regras de negócio no servidor
@@ -212,5 +234,6 @@ Apresentacao_tcc/
 ├── Dockerfile                # Imagem da aplicação
 ├── compose.yaml              # Aplicação e PostgreSQL local
 ├── .env.example              # Modelo de configuração
+├── .env.docker.example       # Modelo do servidor Docker
 └── README.md                 # Documentação
 ```

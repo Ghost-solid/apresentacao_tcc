@@ -11,13 +11,31 @@ function asBoolean(value, fallback = false) {
 }
 
 function createPool() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL não foi configurada. Copie .env.example para .env e informe o PostgreSQL.');
+  const connectionString = process.env.DATABASE_URL?.trim();
+  const host = process.env.DB_HOST?.trim();
+  if (!connectionString && !host) {
+    throw new Error(
+      'O PostgreSQL não foi configurado. Informe DATABASE_URL ou DB_HOST, DB_NAME, DB_USER e DB_PASSWORD.'
+    );
   }
 
   const sslEnabled = asBoolean(process.env.DB_SSL, false);
+  const connection = connectionString
+    ? { connectionString }
+    : {
+        host,
+        port: Number(process.env.DB_PORT || 5432),
+        database: process.env.DB_NAME,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD
+      };
+
+  if (!connectionString && (!connection.database || !connection.user || !connection.password)) {
+    throw new Error('DB_NAME, DB_USER e DB_PASSWORD são obrigatórios quando DATABASE_URL não é usada.');
+  }
+
   return new Pool({
-    connectionString: process.env.DATABASE_URL,
+    ...connection,
     ssl: sslEnabled
       ? { rejectUnauthorized: asBoolean(process.env.DB_SSL_REJECT_UNAUTHORIZED, true) }
       : undefined,
