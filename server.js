@@ -5,7 +5,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 
-const { pool, initializeDatabase } = require('./src/database');
+const { pool, initializeDatabase, demoMode } = require('./src/database');
 const library = require('./src/library-service');
 
 const app = express();
@@ -136,6 +136,10 @@ app.get('/api/health', asyncRoute(async (_request, response) => {
   response.json({ status: 'ok', database: 'connected' });
 }));
 
+app.get('/api/config', (_request, response) => {
+  response.json({ demoMode });
+});
+
 app.post('/api/auth/login', loginLimiter, asyncRoute(async (request, response) => {
   const username = String(request.body?.username ?? '').trim().toLowerCase().slice(0, 80);
   const password = String(request.body?.password ?? '').slice(0, 200);
@@ -259,6 +263,16 @@ app.get('/interacao.js', sendFrontendFile('interacao.js'));
 app.get('/estilo.css', sendFrontendFile('estilo.css'));
 app.get('/biblioteca.css', sendFrontendFile('biblioteca.css'));
 app.get('/apresentacao.css', sendFrontendFile('apresentacao.css'));
+app.use('/fonts/inter', express.static(path.join(root, 'node_modules', '@fontsource', 'inter', 'files'), {
+  index: false,
+  dotfiles: 'deny',
+  maxAge: production ? '30d' : 0
+}));
+app.use('/fonts/lato', express.static(path.join(root, 'node_modules', '@fontsource', 'lato', 'files'), {
+  index: false,
+  dotfiles: 'deny',
+  maxAge: production ? '30d' : 0
+}));
 app.use('/images', express.static(path.join(root, 'images'), {
   index: false,
   dotfiles: 'deny',
@@ -304,3 +318,4 @@ if (require.main === module) {
 }
 
 module.exports = app;
+module.exports.start = start;

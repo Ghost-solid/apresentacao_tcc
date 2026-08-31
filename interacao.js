@@ -140,12 +140,24 @@ async function requisitarApi(caminho, opcoes = {}) {
   const tipo = resposta.headers.get('content-type') || '';
   const dados = tipo.includes('application/json') ? await resposta.json() : null;
   if (!resposta.ok) {
-    const erro = new Error(dados?.message || 'Não foi possível concluir a operação.');
+    const mensagemServidorIncorreto = caminho.startsWith('/api/') && !tipo.includes('application/json')
+      ? 'Este endereço não está executando a API. Use “npm.cmd run demo” e abra http://localhost:8000; o Go Live não realiza login.'
+      : 'Não foi possível concluir a operação.';
+    const erro = new Error(dados?.message || mensagemServidorIncorreto);
     erro.status = resposta.status;
     erro.code = dados?.code;
     throw erro;
   }
   return dados;
+}
+
+async function configurarAcessoDemonstracao() {
+  try {
+    const configuracao = await requisitarApi('/api/config');
+    $('#acessoDemonstracao').classList.toggle('oculto', !configuracao.demoMode);
+  } catch {
+    // A mensagem principal de conexão é exibida por restaurarSessao ou pelo envio do formulário.
+  }
 }
 
 function aplicarEstado(dados = {}) {
@@ -1125,4 +1137,5 @@ async function restaurarSessao() {
   }
 }
 
+configurarAcessoDemonstracao();
 restaurarSessao();

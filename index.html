@@ -20,7 +20,7 @@
         <h1>DS Legacy</h1>
         <p>Uma biblioteca viva, organizada e próxima de toda a comunidade escolar.</p>
         <div class="recursos-login" aria-label="Recursos do sistema">
-          <span>Acervo organizado</span>
+          <span>Estoque organizado</span>
           <span>Leitores acompanhados</span>
           <span>Histórias preservadas</span>
         </div>
@@ -36,6 +36,7 @@
       <p class="erro-login" id="erroLogin" role="alert"></p>
       <button class="botao-principal" type="submit">Acessar</button>
       <div class="contas-teste"><strong>Acesso protegido pelo servidor</strong><span>Use as credenciais fornecidas pela administração da biblioteca.</span><span>Os acessos iniciais podem ser configurados no arquivo <code>.env</code>.</span></div>
+      <div class="contas-teste oculto" id="acessoDemonstracao"><strong>Modo de demonstração</strong><span>Usuário: <code>biblioteca</code></span><span>Senha: <code>Biblioteca@123</code></span></div>
       <div class="migracao-login">
         <strong>Migração do protótipo anterior</strong>
         <span id="estadoMigracaoLogin">Se os dados estavam em outro endereço, exporte o arquivo no navegador antigo e selecione-o aqui antes de entrar.</span>
@@ -64,10 +65,10 @@
     </aside>
 
     <main class="conteudo-principal">
-      <header class="barra-superior"><button class="menu-celular" id="menuCelular" aria-label="Abrir menu">☰</button><div class="contexto-pagina"><span>DS LEGACY • ACERVO ESCOLAR</span><h1 id="tituloPagina">Painel</h1><p id="textoHoje"></p></div><button class="botao-notificacao" id="botaoNotificacao" aria-label="Notificações">♢ <span id="quantidadeNotificacoes">0</span></button></header>
+      <header class="barra-superior"><button class="menu-celular" id="menuCelular" aria-label="Abrir menu">☰</button><div class="contexto-pagina"><span>DS LEGACY • ESTOQUE ESCOLAR</span><h1 id="tituloPagina">Painel</h1><p id="textoHoje"></p></div><button class="botao-notificacao" id="botaoNotificacao" aria-label="Notificações">♢ <span id="quantidadeNotificacoes">0</span></button></header>
 
       <section class="pagina ativo" id="painel">
-        <div class="cartao-boas-vindas"><div class="texto-boas-vindas"><span>GESTÃO DA BIBLIOTECA</span><h2>Bem-vindo ao DS Legacy</h2><p>Organize o acervo, acompanhe leitores e mantenha o conhecimento sempre em circulação.</p></div><div class="ilustracao-biblioteca" aria-hidden="true"><i></i><i></i><i></i><b></b></div><button class="botao-branco abrir-emprestimo">+ Novo empréstimo</button></div>
+        <div class="cartao-boas-vindas"><div class="texto-boas-vindas"><span>GESTÃO DA BIBLIOTECA</span><h2>Bem-vindo ao DS Legacy</h2><p>Organize o estoque, acompanhe leitores e mantenha o conhecimento sempre em circulação.</p></div><div class="ilustracao-biblioteca" aria-hidden="true"><i></i><i></i><i></i><b></b></div><button class="botao-branco abrir-emprestimo">+ Novo empréstimo</button></div>
         <div class="cartoes">
           <article><div class="icone-cartao azul">▥</div><div><span>Títulos no Estoque</span><strong id="totalTitulos">0</strong></div></article>
           <article><div class="icone-cartao laranja">⇄</div><div><span>Empréstimos ativos</span><strong id="totalEmprestimos">0</strong></div></article>

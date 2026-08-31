@@ -10,7 +10,45 @@ function asBoolean(value, fallback = false) {
   return String(value).toLowerCase() === 'true';
 }
 
+const demoMode = asBoolean(process.env.DEMO_MODE, false);
+
+function createDemoPool() {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('DEMO_MODE não pode ser usado em produção. Configure um servidor PostgreSQL real.');
+  }
+
+  const { PGlite } = require('@electric-sql/pglite');
+  const databasePath = path.resolve(
+    __dirname,
+    '..',
+    process.env.DEMO_DATABASE_PATH || '.demo-data'
+  );
+  const database = new PGlite(databasePath);
+
+  return {
+    async query(sql, parameters = []) {
+      const multipleStatements = parameters.length === 0 && /;\s*\S/.test(sql);
+      if (multipleStatements) {
+        await database.exec(sql);
+        return { rows: [], rowCount: 0 };
+      }
+      const result = await database.query(sql, parameters);
+      return {
+        ...result,
+        rowCount: Number.isInteger(result.affectedRows)
+          ? result.affectedRows
+          : (Array.isArray(result.rows) ? result.rows.length : 0)
+      };
+    },
+    end() {
+      return database.close();
+    }
+  };
+}
+
 function createPool() {
+  if (demoMode) return createDemoPool();
+
   const connectionString = process.env.DATABASE_URL?.trim();
   const host = process.env.DB_HOST?.trim();
   if (!connectionString && !host) {
@@ -46,9 +84,9 @@ function createPool() {
 }
 
 const pool = createPool();
+let demoTransactionQueue = Promise.resolve();
 
-async function withTransaction(callback) {
-  const client = await pool.connect();
+async function runTransaction(client, callback) {
   try {
     await client.query('BEGIN');
     const result = await callback(client);
@@ -57,6 +95,19 @@ async function withTransaction(callback) {
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
+  }
+}
+
+async function withTransaction(callback) {
+  if (demoMode) {
+    const operation = demoTransactionQueue.then(() => runTransaction(pool, callback));
+    demoTransactionQueue = operation.catch(() => undefined);
+    return operation;
+  }
+
+  const client = await pool.connect();
+  try {
+    return await runTransaction(client, callback);
   } finally {
     client.release();
   }
@@ -109,4 +160,4 @@ async function initializeDatabase({ seed = true } = {}) {
   });
 }
 
-module.exports = { pool, withTransaction, initializeDatabase };
+module.exports = { pool, withTransaction, initializeDatabase, demoMode };

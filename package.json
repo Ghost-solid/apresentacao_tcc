@@ -7,14 +7,17 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "demo": "node scripts/start-demo.js",
     "db:init": "node scripts/init-db.js",
-    "check": "node --check server.js && node --check src/database.js && node --check src/library-service.js && node --check interacao.js",
+    "check": "node --check server.js && node --check src/database.js && node --check src/library-service.js && node --check scripts/start-demo.js && node --check interacao.js",
     "test": "node --test"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/lato": "^5.3.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

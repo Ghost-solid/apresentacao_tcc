@@ -1,4 +1,36 @@
 /* Identidade visual editorial do DS Legacy */
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/inter-latin-400-normal.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/inter-latin-700-normal.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Lato";
+  src: url("/fonts/lato/lato-latin-400-normal.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Lato";
+  src: url("/fonts/lato/lato-latin-700-normal.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
 :root {
   --azul: #285779;
   --azul-escuro: #122f43;
@@ -26,7 +58,7 @@ html {
 
 body {
   min-height: 100vh;
-  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+  font-family: "Lato", Arial, sans-serif;
   background:
     radial-gradient(circle at 88% 8%, rgba(195, 138, 59, 0.08), transparent 24rem),
     linear-gradient(135deg, #f6f3ed 0%, var(--fundo) 55%, #edf1ef 100%);
@@ -36,8 +68,11 @@ body {
 h1,
 h2,
 h3,
+h4,
+h5,
+h6,
 .marca-texto b {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter", Arial, sans-serif;
   letter-spacing: -0.015em;
 }
 
@@ -204,7 +239,7 @@ textarea:focus-visible {
 }
 
 .cartao-login::before {
-  content: "ACESSO AO ACERVO";
+  content: "ACESSO AO ESTOQUE";
   display: block;
   margin-bottom: 8px;
   color: var(--dourado);
@@ -703,7 +738,7 @@ dialog textarea:focus {
 .cartoes strong,
 .cartoes-biblioteca strong {
   color: var(--azul-escuro);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Lato", Arial, sans-serif;
 }
 
 .icone-cartao {
@@ -790,7 +825,7 @@ dialog textarea:focus {
 
 .vazio b {
   color: var(--azul-escuro);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter", Arial, sans-serif;
   font-size: 13px;
 }
 

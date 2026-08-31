@@ -56,6 +56,24 @@ O navegador nunca recebe a senha ou o endereço do banco. A interface chama a AP
 
 ## Executar localmente
 
+### Demonstração sem instalar PostgreSQL
+
+Para testar neste computador antes de configurar o servidor do trabalho, use o banco PostgreSQL embutido de demonstração:
+
+```powershell
+npm.cmd install
+npm.cmd run demo
+```
+
+Acesse `http://localhost:8000` e entre com:
+
+```text
+Usuário: biblioteca
+Senha: Biblioteca@123
+```
+
+Os dados desse modo ficam somente na pasta local `.demo-data`, ignorada pelo Git. Não use o modo de demonstração para a hospedagem real. O Go Live publica apenas arquivos estáticos e não consegue realizar o login.
+
 ### Requisitos
 
 - Node.js 20 ou superior.
@@ -210,6 +228,7 @@ powershell -ExecutionPolicy Bypass -File scripts/backup-docker.ps1
 |---|---|
 | `npm start` | Inicia o servidor |
 | `npm run dev` | Inicia com recarregamento durante o desenvolvimento |
+| `npm run demo` | Inicia uma demonstração local sem instalar PostgreSQL |
 | `npm run db:init` | Cria tabelas e sincroniza contas administrativas |
 | `npm run check` | Verifica a sintaxe dos arquivos JavaScript |
 | `npm test` | Executa os testes da API, do banco e das regras de negócio |
