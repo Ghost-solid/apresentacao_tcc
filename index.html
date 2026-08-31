@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="DS Legacy - sistema de gestão da biblioteca escolar.">
   <title>DS Legacy | Biblioteca Escolar</title>
-  <link rel="icon" type="image/png" href="images/favicon_projeto.jpeg">
-  <link rel="stylesheet" href="estilo.css">
-  <link rel="stylesheet" href="biblioteca.css">
-  <link rel="stylesheet" href="apresentacao.css">
+  <link rel="icon" type="image/jpeg" href="/images/favicon_projeto.jpeg?v=20260831-1">
+  <link rel="stylesheet" href="/estilo.css?v=20260831-1">
+  <link rel="stylesheet" href="/biblioteca.css?v=20260831-1">
+  <link rel="stylesheet" href="/apresentacao.css?v=20260831-1">
 </head>
 <body>
   <section class="pagina-login" id="paginaLogin">
     <div class="informacoes-login">
       <div class="conteudo-login-institucional">
         <span class="selo-login">Biblioteca escolar inteligente</span>
-        <img src="images/1000043352.jpg" alt="Logo DS Legacy">
+        <img src="/images/1000043352.jpg?v=20260831-1" alt="Logo DS Legacy">
         <span class="chamada-login">CONHECIMENTO QUE CIRCULA</span>
         <h1>DS Legacy</h1>
         <p>Uma biblioteca viva, organizada e próxima de toda a comunidade escolar.</p>
@@ -51,7 +51,7 @@
 
   <div class="sistema oculto" id="sistema">
     <aside class="barra-lateral" id="barra-lateral">
-      <div class="marca"><img src="images/1000043352.jpg" alt="Logo DS Legacy"><span class="marca-texto"><b>DS Legacy</b><small>Biblioteca escolar</small></span></div>
+      <div class="marca"><img src="/images/1000043352.jpg?v=20260831-1" alt="Logo DS Legacy"><span class="marca-texto"><b>DS Legacy</b><small>Biblioteca escolar</small></span></div>
       <nav aria-label="Navegação principal">
         <button class="item-navegacao ativo" data-pagina="painel"><span class="icone-navegacao" aria-hidden="true">⌂</span><span>Painel</span></button>
         <button class="item-navegacao" data-pagina="leitores"><span class="icone-navegacao" aria-hidden="true">♙</span><span>Leitores</span></button>
@@ -89,7 +89,7 @@
       <section class="pagina" id="biblioteca">
         <div class="acoes-pagina"><div><h2>Estoque da biblioteca</h2><p>Cadastro e localização dos livros da escola.</p></div><button class="botao-principal" id="abrirItemBiblioteca">+ Cadastrar livro</button></div>
         <div class="cartoes-biblioteca"><article><span>Títulos cadastrados</span><strong id="titulosBiblioteca">0</strong></article><article><span>Total de exemplares</span><strong id="exemplaresBiblioteca">0</strong></article><article><span>Disponíveis</span><strong id="bibliotecaDisponiveis">0</strong></article><article class="atencao"><span>Sem disponibilidade</span><strong id="estoqueBaixoBiblioteca">0</strong></article></div>
-        <div class="caixa caixa-tabela"><div class="ferramentas-biblioteca"><input class="pesquisa" id="pesquisaBiblioteca" type="search" placeholder="Pesquisar qualquer dado do livro..."><select id="filtroCategoriaBiblioteca"><option value="">Todas as categorias</option><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Infantil</option><option>Biografia</option><option value="Outro">Outras categorias</option></select></div><div class="vazio" id="bibliotecaVazia"><b>Nenhum livro cadastrado</b><span>Cadastre o primeiro livro do Estoque.</span></div><div class="rolagem-tabela"><table id="tabelaBiblioteca"><thead><tr><th>ID</th><th>Título</th><th>Autor</th><th>Categoria</th><th>ISBN</th><th>Local</th><th>Total</th><th>Disponíveis</th><th>Estado</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
+        <div class="caixa caixa-tabela"><div class="ferramentas-biblioteca"><input class="pesquisa" id="pesquisaBiblioteca" type="search" placeholder="Pesquisar qualquer dado do livro..."><select id="filtroCategoriaBiblioteca"><option value="">Todas as categorias</option><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Infantil</option><option>Biografia</option><option value="Outro">Outras categorias</option></select><select id="ordenacaoBiblioteca" aria-label="Ordenar livros"><option value="codigo-asc">Código crescente</option><option value="codigo-desc">Código decrescente</option><option value="titulo-asc">Título: A–Z</option><option value="titulo-desc">Título: Z–A</option></select></div><div class="vazio" id="bibliotecaVazia"><b>Nenhum livro cadastrado</b><span>Cadastre o primeiro livro do Estoque.</span></div><div class="rolagem-tabela"><table id="tabelaBiblioteca"><thead><tr><th>ID</th><th>Título</th><th>Autor</th><th>Categoria</th><th>ISBN</th><th>Local</th><th>Total</th><th>Disponíveis</th><th>Estado</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
       </section>
 
       <section class="pagina" id="emprestimos">
@@ -270,6 +270,6 @@
   </dialog>
 
   <div class="aviso-flutuante" id="aviso-flutuante" role="status"></div>
-  <script src="interacao.js"></script>
+  <script src="/interacao.js?v=20260831-1"></script>
 </body>
 </html>

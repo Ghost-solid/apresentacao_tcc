@@ -892,7 +892,22 @@ $('#confirmarRenovacao').addEventListener('click', async evento => {
   }
 });
 
+const comparadorBiblioteca = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
+
+function ordenarBiblioteca(lista) {
+  const ordenacao = $('#ordenacaoBiblioteca')?.value || 'codigo-asc';
+  const porTitulo = ordenacao.startsWith('titulo');
+  const direcao = ordenacao.endsWith('desc') ? -1 : 1;
+  return [...lista].sort((livroA, livroB) => {
+    const valorA = porTitulo ? livroA.title : livroA.code;
+    const valorB = porTitulo ? livroB.title : livroB.code;
+    const resultado = comparadorBiblioteca.compare(String(valorA || ''), String(valorB || ''));
+    return resultado * direcao || Number(livroA.id) - Number(livroB.id);
+  });
+}
+
 function renderizarBiblioteca(lista = livros) {
+  const listaOrdenada = ordenarBiblioteca(lista);
   $('#titulosBiblioteca').textContent = livros.length;
   $('#exemplaresBiblioteca').textContent = livros.reduce((total, livro) => total + Number(livro.quantity || 0), 0);
   $('#bibliotecaDisponiveis').textContent = livros.reduce((total, livro) => total + Number(livro.available || 0), 0);
@@ -903,7 +918,7 @@ function renderizarBiblioteca(lista = livros) {
   bibliotecaVazia.querySelector('span').textContent = livros.length && filtroAtivo ? 'Tente pesquisar outro termo ou alterar a categoria.' : 'Cadastre o primeiro livro do Estoque.';
   bibliotecaVazia.style.display = lista.length ? 'none' : 'flex';
   $('#tabelaBiblioteca').style.display = lista.length ? 'table' : 'none';
-  $('#tabelaBiblioteca tbody').innerHTML = lista.map(livro => `<tr><td>${escaparHtml(livro.code)}</td><td><b>${escaparHtml(livro.title || 'Sem título')}</b><small class="detalhe-livro">${escaparHtml(livro.publisher || '')} ${livro.year || ''}${Number(livro.lostCopies || 0) ? ` • ${livro.lostCopies} perdido(s)` : ''}</small></td><td>${escaparHtml(livro.author || 'Não informado')}</td><td>${escaparHtml(livro.category || 'Não informada')}</td><td>${escaparHtml(livro.isbn || '—')}</td><td>${escaparHtml(livro.location || 'Não informado')}</td><td>${livro.quantity}</td><td><b class="${Number(livro.available) === 0 ? 'estoque-baixo' : ''}">${livro.available}</b></td><td>${escaparHtml(livro.condition || 'Não informado')}</td><td><div class="acoes-emprestimo"><button class="botao-pequeno editar-livro" data-id="${livro.id}">Editar</button>${livroPodeSerReservado(livro) ? `<button class="botao-pequeno reservar-livro" data-id="${livro.id}">Reservar</button>` : ''}<button class="botao-pequeno botao-excluir excluir-livro" data-id="${livro.id}">Excluir</button></div></td></tr>`).join('');
+  $('#tabelaBiblioteca tbody').innerHTML = listaOrdenada.map(livro => `<tr><td>${escaparHtml(livro.code)}</td><td><b>${escaparHtml(livro.title || 'Sem título')}</b><small class="detalhe-livro">${escaparHtml(livro.publisher || '')} ${livro.year || ''}${Number(livro.lostCopies || 0) ? ` • ${livro.lostCopies} perdido(s)` : ''}</small></td><td>${escaparHtml(livro.author || 'Não informado')}</td><td>${escaparHtml(livro.category || 'Não informada')}</td><td>${escaparHtml(livro.isbn || '—')}</td><td>${escaparHtml(livro.location || 'Não informado')}</td><td>${livro.quantity}</td><td><b class="${Number(livro.available) === 0 ? 'estoque-baixo' : ''}">${livro.available}</b></td><td>${escaparHtml(livro.condition || 'Não informado')}</td><td><div class="acoes-emprestimo"><button class="botao-pequeno editar-livro" data-id="${livro.id}">Editar</button>${livroPodeSerReservado(livro) ? `<button class="botao-pequeno reservar-livro" data-id="${livro.id}">Reservar</button>` : ''}<button class="botao-pequeno botao-excluir excluir-livro" data-id="${livro.id}">Excluir</button></div></td></tr>`).join('');
   $$('.editar-livro').forEach(botao => botao.addEventListener('click', () => abrirFormularioLivro(botao.dataset.id)));
   $$('.reservar-livro').forEach(botao => botao.addEventListener('click', () => abrirFormularioReserva(botao.dataset.id)));
   $$('.excluir-livro').forEach(botao => botao.addEventListener('click', () => abrirConfirmacaoExclusao('livro', botao.dataset.id)));
@@ -1063,6 +1078,7 @@ function renderizarTudo() {
 
 $('#pesquisaBiblioteca').addEventListener('input', filtrarBiblioteca);
 $('#filtroCategoriaBiblioteca').addEventListener('change', filtrarBiblioteca);
+$('#ordenacaoBiblioteca').addEventListener('change', filtrarBiblioteca);
 
 function normalizarCategoria(categoria) {
   return String(categoria ?? '')
