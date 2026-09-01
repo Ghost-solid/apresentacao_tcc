@@ -13,6 +13,13 @@
 <body>
   <section class="pagina-login" id="paginaLogin">
     <div class="informacoes-login">
+      <div class="biblioteca-animada" aria-hidden="true">
+        <span class="livro-flutuante livro-flutuante-um"></span>
+        <span class="livro-flutuante livro-flutuante-dois"></span>
+        <span class="livro-flutuante livro-flutuante-tres"></span>
+        <span class="folha-flutuante folha-flutuante-um"></span>
+        <span class="folha-flutuante folha-flutuante-dois"></span>
+      </div>
       <div class="conteudo-login-institucional">
         <span class="selo-login">Biblioteca escolar inteligente</span>
         <img src="/images/1000043352.jpg?v=20260831-1" alt="Logo DS Legacy">
@@ -89,7 +96,7 @@
       <section class="pagina" id="biblioteca">
         <div class="acoes-pagina"><div><h2>Estoque da biblioteca</h2><p>Cadastro e localização dos livros da escola.</p></div><button class="botao-principal" id="abrirItemBiblioteca">+ Cadastrar livro</button></div>
         <div class="cartoes-biblioteca"><article><span>Títulos cadastrados</span><strong id="titulosBiblioteca">0</strong></article><article><span>Total de exemplares</span><strong id="exemplaresBiblioteca">0</strong></article><article><span>Disponíveis</span><strong id="bibliotecaDisponiveis">0</strong></article><article class="atencao"><span>Sem disponibilidade</span><strong id="estoqueBaixoBiblioteca">0</strong></article></div>
-        <div class="caixa caixa-tabela"><div class="ferramentas-biblioteca"><input class="pesquisa" id="pesquisaBiblioteca" type="search" placeholder="Pesquisar qualquer dado do livro..."><select id="filtroCategoriaBiblioteca"><option value="">Todas as categorias</option><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Infantil</option><option>Biografia</option><option value="Outro">Outras categorias</option></select><select id="ordenacaoBiblioteca" aria-label="Ordenar livros"><option value="codigo-asc">Código crescente</option><option value="codigo-desc">Código decrescente</option><option value="titulo-asc">Título: A–Z</option><option value="titulo-desc">Título: Z–A</option></select></div><div class="vazio" id="bibliotecaVazia"><b>Nenhum livro cadastrado</b><span>Cadastre o primeiro livro do Estoque.</span></div><div class="rolagem-tabela"><table id="tabelaBiblioteca"><thead><tr><th>ID</th><th>Título</th><th>Autor</th><th>Categoria</th><th>ISBN</th><th>Local</th><th>Total</th><th>Disponíveis</th><th>Estado</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
+        <div class="caixa caixa-tabela"><div class="ferramentas-biblioteca"><select id="campoPesquisaBiblioteca" aria-label="Escolher campo de pesquisa do Estoque"><option value="todos">Todos os campos</option><option value="id">ID</option><option value="titulo">Título</option><option value="autor">Autor</option><option value="editora">Editora</option><option value="categoria">Categoria</option><option value="isbn">ISBN</option><option value="ano">Ano</option><option value="local">Localização</option><option value="total">Quantidade total</option><option value="disponiveis">Disponíveis</option><option value="perdidos">Perdidos</option><option value="estado">Estado</option></select><input class="pesquisa" id="pesquisaBiblioteca" type="search" placeholder="Pesquisar em todos os campos..."><select id="filtroCategoriaBiblioteca"><option value="">Todas as categorias</option><option>Literatura</option><option>Didático</option><option>Pesquisa</option><option>Infantil</option><option>Biografia</option><option value="Outro">Outras categorias</option></select><select id="ordenacaoBiblioteca" aria-label="Ordenar livros"><option value="codigo-asc">Código crescente</option><option value="codigo-desc">Código decrescente</option><option value="titulo-asc">Título: A–Z</option><option value="titulo-desc">Título: Z–A</option></select></div><div class="vazio" id="bibliotecaVazia"><b>Nenhum livro cadastrado</b><span>Cadastre o primeiro livro do Estoque.</span></div><div class="rolagem-tabela"><table id="tabelaBiblioteca"><thead><tr><th>ID</th><th>Título</th><th>Autor</th><th>Categoria</th><th>ISBN</th><th>Local</th><th>Total</th><th>Disponíveis</th><th>Estado</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
       </section>
 
       <section class="pagina" id="emprestimos">
@@ -112,14 +119,14 @@
 
   <dialog id="janelaLeitor">
     <form method="dialog" id="formularioLeitor">
-      <div class="titulo-modal"><h2 id="tituloFormularioLeitor">Cadastrar leitor</h2><button value="cancel" formnovalidate aria-label="Fechar">×</button></div>
-      <p class="explicacao-cadastro" id="explicacaoFormularioLeitor">Preencha somente os dados que desejar. O prefixo do ID acompanha o tipo selecionado.</p>
+      <div class="titulo-modal"><h2 id="tituloFormularioLeitor">Cadastrar leitor</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
+      <p class="explicacao-cadastro" id="explicacaoFormularioLeitor">Preencha somente os dados que desejar. O ID numérico é criado automaticamente e permanece fixo.</p>
       <label for="nomeLeitor">Nome completo</label>
-      <input id="nomeLeitor">
+      <input id="nomeLeitor" type="text" inputmode="text" autocomplete="name" placeholder="Ex.: Maria José da Silva">
       <div class="grade-formulario">
         <div>
           <label for="matriculaLeitor">ID do leitor</label>
-          <input class="campo-automatico" id="matriculaLeitor" readonly aria-label="ID do leitor gerado automaticamente conforme o tipo">
+          <input class="campo-automatico" id="matriculaLeitor" readonly placeholder="Gerado ao salvar" aria-label="ID numérico e permanente do leitor, gerado automaticamente ao salvar">
         </div>
         <div>
           <label for="tipoLeitor">Tipo</label>
@@ -158,18 +165,18 @@
         <option value="Outro">Outra turma ou setor</option>
       </select>
       <input class="campo-outro oculto" id="outraTurmaLeitor" placeholder="Digite a turma ou o setor">
-      <div class="acoes-modal"><button value="cancel" formnovalidate class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarLeitor">Salvar leitor</button></div>
+      <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarLeitor">Salvar leitor</button></div>
     </form>
   </dialog>
 
   <dialog id="janelaBiblioteca" class="janela-grande">
     <form method="dialog" id="formularioBiblioteca">
-      <div class="titulo-modal"><h2 id="tituloFormularioLivro">Cadastrar livro</h2><button value="cancel" formnovalidate aria-label="Fechar">×</button></div>
+      <div class="titulo-modal"><h2 id="tituloFormularioLivro">Cadastrar livro</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
       <p class="explicacao-cadastro">Preencha somente os dados que desejar. O ID é criado automaticamente.</p>
       <div class="grade-formulario">
         <div>
           <label for="codigoLivro">ID do livro</label>
-          <input class="campo-automatico" id="codigoLivro" readonly aria-label="ID do livro gerado automaticamente">
+          <input class="campo-automatico" id="codigoLivro" readonly placeholder="Gerado ao salvar" aria-label="ID numérico do livro gerado automaticamente ao salvar">
         </div>
         <div><label for="isbnLivro">ISBN</label><input id="isbnLivro" placeholder="Ex.: 9788535914849"></div>
       </div>
@@ -191,15 +198,28 @@
       <label for="estadoLivro">Estado de conservação</label>
       <select id="estadoLivro" data-campo-outro="outroEstadoLivro"><option value="">Não informado</option><option>Bom</option><option>Regular</option><option>Danificado</option><option>Outro</option></select>
       <input class="campo-outro oculto" id="outroEstadoLivro" placeholder="Descreva o estado de conservação">
-      <div class="acoes-modal"><button value="cancel" formnovalidate class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarItemBiblioteca">Salvar livro</button></div>
+      <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarItemBiblioteca">Salvar livro</button></div>
     </form>
   </dialog>
 
-  <dialog id="janelaEmprestimo"><form method="dialog" id="formularioEmprestimo"><div class="titulo-modal"><h2>Registrar empréstimo</h2><button value="cancel" aria-label="Fechar">×</button></div><label for="pesquisaLeitorEmprestimo">Pesquisar leitor</label><input id="pesquisaLeitorEmprestimo" type="search" placeholder="Digite qualquer dado do leitor"><label for="leitorEmprestimo">Escolher leitor</label><select id="leitorEmprestimo" required><option value="">Selecione um leitor</option></select><p class="aviso-bloqueio oculto" id="avisoBloqueio"></p><label for="pesquisaLivroEmprestimo">Pesquisar livro</label><input id="pesquisaLivroEmprestimo" type="search" placeholder="Digite qualquer dado do livro"><label for="livroEmprestimo">Escolher livro disponível</label><select id="livroEmprestimo" required><option value="">Selecione um livro</option></select><div class="grade-formulario"><div><label for="dataEmprestimo">Data do empréstimo</label><input id="dataEmprestimo" type="date" required></div><div><label for="dataPrazo">Prazo de devolução</label><input id="dataPrazo" type="date" required></div></div><div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarEmprestimo">Confirmar empréstimo</button></div></form></dialog>
+  <dialog id="janelaEmprestimo">
+    <form method="dialog" id="formularioEmprestimo">
+      <div class="titulo-modal"><h2>Registrar empréstimo</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
+      <label for="leitorEmprestimo">Pesquisar e selecionar leitor</label>
+      <input id="leitorEmprestimo" type="search" list="opcoesLeitoresEmprestimo" autocomplete="off" placeholder="Digite o nome, tipo ou ID do leitor" required>
+      <datalist id="opcoesLeitoresEmprestimo"></datalist>
+      <p class="aviso-bloqueio oculto" id="avisoBloqueio"></p>
+      <label for="livroEmprestimo">Pesquisar e selecionar livro disponível</label>
+      <input id="livroEmprestimo" type="search" list="opcoesLivrosEmprestimo" autocomplete="off" placeholder="Digite o título, autor ou ID do livro" required>
+      <datalist id="opcoesLivrosEmprestimo"></datalist>
+      <div class="grade-formulario"><div><label for="dataEmprestimo">Data do empréstimo</label><input id="dataEmprestimo" type="date" required></div><div><label for="dataPrazo">Prazo de devolução</label><input id="dataPrazo" type="date" required></div></div>
+      <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarEmprestimo">Confirmar empréstimo</button></div>
+    </form>
+  </dialog>
 
   <dialog id="janelaDevolucao">
     <form method="dialog" id="formularioDevolucao">
-      <div class="titulo-modal"><h2>Conferir devolução</h2><button value="cancel" aria-label="Fechar">×</button></div>
+      <div class="titulo-modal"><h2>Conferir devolução</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
       <div class="resumo-devolucao" id="resumoDevolucao"></div>
       <label for="estadoDevolucao">Estado do livro na devolução</label>
       <select id="estadoDevolucao" data-campo-outro="outroEstadoDevolucao" required>
@@ -209,23 +229,23 @@
       <label for="observacaoDevolucao">Observação</label>
       <textarea id="observacaoDevolucao" rows="4" placeholder="Descreva avarias, páginas rasgadas, riscos ou outras informações"></textarea>
       <p class="explicacao-advertencia">Se o estado informado não for “Bom”, uma advertência será registrada no histórico do leitor.</p>
-      <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="confirmarDevolucao">Confirmar devolução</button></div>
+      <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="confirmarDevolucao">Confirmar devolução</button></div>
     </form>
   </dialog>
 
   <dialog id="janelaRenovacao">
     <form method="dialog" id="formularioRenovacao">
-      <div class="titulo-modal"><h2>Renovar empréstimo</h2><button value="cancel" aria-label="Fechar">×</button></div>
+      <div class="titulo-modal"><h2>Renovar empréstimo</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
       <div class="resumo-devolucao" id="resumoRenovacao"></div>
       <label for="novaDataPrazo">Novo prazo de devolução</label>
       <input id="novaDataPrazo" type="date" required>
       <p class="explicacao-renovacao">A nova data deve ser posterior ao prazo atual. Empréstimos atrasados ou livros com reserva ativa não podem ser renovados.</p>
-      <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="confirmarRenovacao">Confirmar renovação</button></div>
+      <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="confirmarRenovacao">Confirmar renovação</button></div>
     </form>
   </dialog>
 
   <dialog id="janelaHistoricoLeitor" class="janela-historico">
-    <div class="titulo-modal"><h2>Histórico do leitor</h2><button type="button" id="fecharHistoricoLeitor" aria-label="Fechar">×</button></div>
+    <div class="titulo-modal"><h2>Histórico do leitor</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
     <div class="cabecalho-historico">
       <div><h3 id="nomeHistoricoLeitor"></h3><p id="dadosHistoricoLeitor"></p></div>
       <span class="situacao" id="situacaoHistoricoLeitor"></span>
@@ -243,29 +263,27 @@
 
   <dialog id="janelaReserva">
     <form method="dialog" id="formularioReserva">
-      <div class="titulo-modal"><h2>Reservar livro</h2><button value="cancel" aria-label="Fechar">×</button></div>
-      <label for="pesquisaLivroReserva">Pesquisar livro indisponível</label>
-      <input id="pesquisaLivroReserva" type="search" placeholder="Digite qualquer dado do livro">
-      <label for="livroReserva">Escolher livro</label>
-      <select id="livroReserva" required><option value="">Selecione um livro</option></select>
-      <label for="pesquisaLeitorReserva">Pesquisar leitor</label>
-      <input id="pesquisaLeitorReserva" type="search" placeholder="Digite qualquer dado do leitor">
-      <label for="leitorReserva">Escolher leitor</label>
-      <select id="leitorReserva" required><option value="">Selecione um leitor</option></select>
+      <div class="titulo-modal"><h2>Reservar livro</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
+      <label for="livroReserva">Pesquisar e selecionar livro indisponível</label>
+      <input id="livroReserva" type="search" list="opcoesLivrosReserva" autocomplete="off" placeholder="Digite o título, autor ou ID do livro" required>
+      <datalist id="opcoesLivrosReserva"></datalist>
+      <label for="leitorReserva">Pesquisar e selecionar leitor</label>
+      <input id="leitorReserva" type="search" list="opcoesLeitoresReserva" autocomplete="off" placeholder="Digite o nome, tipo ou ID do leitor" required>
+      <datalist id="opcoesLeitoresReserva"></datalist>
       <p class="explicacao-renovacao">A reserva será adicionada ao final da fila. Cada leitor pode reservar o mesmo título apenas uma vez.</p>
-      <div class="acoes-modal"><button value="cancel" class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarReserva">Confirmar reserva</button></div>
+      <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal" id="salvarReserva">Confirmar reserva</button></div>
     </form>
   </dialog>
 
   <dialog id="janelaExclusao">
     <form method="dialog" id="formularioExclusao">
-      <div class="titulo-modal"><h2 id="tituloExclusao">Confirmar exclusão</h2><button value="cancel" formnovalidate aria-label="Fechar">×</button></div>
+      <div class="titulo-modal"><h2 id="tituloExclusao">Ocultar cadastro</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
       <p class="mensagem-exclusao" id="mensagemExclusao"></p>
-      <p class="alerta-exclusao">Esta ação remove o cadastro e não poderá ser desfeita. Históricos concluídos serão preservados.</p>
+      <p class="alerta-exclusao">O cadastro será ocultado das listas. Os dados essenciais e históricos continuarão preservados no banco.</p>
       <label for="senhaExclusao">Senha da conta conectada</label>
       <input id="senhaExclusao" type="password" autocomplete="current-password" required placeholder="Digite sua senha para confirmar">
       <p class="erro-exclusao" id="erroExclusao" role="alert"></p>
-      <div class="acoes-modal"><button value="cancel" formnovalidate class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal botao-perigo" id="confirmarExclusao">Excluir permanentemente</button></div>
+      <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal botao-perigo" id="confirmarExclusao">Ocultar cadastro</button></div>
     </form>
   </dialog>
 

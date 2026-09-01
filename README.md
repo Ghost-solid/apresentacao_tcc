@@ -21,18 +21,18 @@ O navegador nunca recebe a senha ou o endereço do banco. A interface chama a AP
 
 ### Leitores
 
-- Cadastro, edição, histórico e exclusão com confirmação por senha.
-- Identificadores automáticos por tipo: `ALU-0001`, `PROF-0001`, `FUNC-0001` e `LEI-0001`.
+- Cadastro, edição, histórico e ocultação com confirmação por senha.
+- Identificadores numéricos automáticos e permanentes, como `0001`; mudanças de tipo, turma ou setor não alteram o ID.
 - Turmas e setores predefinidos, com opção personalizada.
 - Pesquisa tolerante a acentos, espaços, pontuação e letras maiúsculas.
 - Filtros de bloqueio, advertência e necessidade de atenção.
 
 ### Livros e estoque
 
-- Cadastro, edição e exclusão segura de livros.
-- Identificadores automáticos no formato `LIV-0001`.
+- Cadastro, edição e ocultação segura de livros.
+- Identificadores numéricos automáticos e permanentes, no formato `0001`.
 - Quantidade total, exemplares disponíveis e livros perdidos.
-- Pesquisa por título, autor, ID, ISBN, editora, categoria, ano, localização e conservação.
+- Pesquisa geral ou direcionada por ID, título, autor, ISBN, editora, categoria, ano, localização, quantidades e conservação.
 - Categorias predefinidas e agrupamento de categorias personalizadas em **Outras categorias**.
 
 ### Circulação do acervo
@@ -194,7 +194,7 @@ Os valores antigos não são apagados automaticamente, servindo como cópia temp
 | `loans` | Empréstimos, devoluções, bloqueios e renovações |
 | `reservations` | Reservas, fila e situação do atendimento |
 
-Leitores e livros excluídos são arquivados no banco para que os históricos concluídos continuem íntegros.
+Leitores e livros ocultados permanecem arquivados no banco com seus dados essenciais, mantendo os históricos concluídos íntegros.
 
 ## Segurança
 

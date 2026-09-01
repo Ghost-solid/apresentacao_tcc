@@ -1,3 +1,4 @@
+const crypto = require('node:crypto');
 const { pool, withTransaction } = require('./database');
 
 class AppError extends Error {
@@ -10,6 +11,17 @@ class AppError extends Error {
 
 function text(value, maxLength, fallback = '') {
   return String(value ?? fallback).trim().slice(0, maxLength);
+}
+
+function properName(value) {
+  const name = text(value, 200).replace(/\s+/g, ' ');
+  if (!name) return '';
+  if (!/^[\p{L}\s]+$/u.test(name)) {
+    throw new AppError(400, 'O nome do leitor pode conter apenas letras e espaços.');
+  }
+  return name.replace(/\p{L}+/gu, word =>
+    word.charAt(0).toLocaleUpperCase('pt-BR')
+    + word.slice(1).toLocaleLowerCase('pt-BR'));
 }
 
 function positiveId(value, field = 'ID') {
@@ -37,19 +49,8 @@ function date(value, field, optional = false) {
   return result;
 }
 
-function normalize(value) {
-  return text(value, 200)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('pt-BR');
-}
-
-function readerPrefix(type) {
-  const normalized = normalize(type);
-  if (normalized === 'aluno') return 'ALU';
-  if (normalized === 'professor') return 'PROF';
-  if (normalized === 'funcionario') return 'FUNC';
-  return 'LEI';
+function formatNumericCode(value) {
+  return String(value).padStart(4, '0');
 }
 
 function mapReader(row) {
@@ -139,34 +140,9 @@ async function loadState(connection = pool) {
   };
 }
 
-async function nextReaderCode(client, type) {
-  const prefix = readerPrefix(type);
-  await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`reader-code:${prefix}`]);
-  const { rows } = await client.query(
-    `SELECT registration_code FROM readers
-     WHERE registration_code ~* $1`,
-    [`^${prefix}-[0-9]+$`]
-  );
-  const greatest = rows.reduce((current, row) => {
-    const found = row.registration_code.match(/-(\d+)$/);
-    return Math.max(current, found ? Number(found[1]) : 0);
-  }, 0);
-  return `${prefix}-${String(greatest + 1).padStart(4, '0')}`;
-}
-
-async function nextBookCode(client) {
-  await client.query("SELECT pg_advisory_xact_lock(hashtext('book-code:LIV'))");
-  const { rows } = await client.query(`SELECT code FROM books WHERE code ~* '^LIV-[0-9]+$'`);
-  const greatest = rows.reduce((current, row) => {
-    const found = row.code.match(/-(\d+)$/);
-    return Math.max(current, found ? Number(found[1]) : 0);
-  }, 0);
-  return `LIV-${String(greatest + 1).padStart(4, '0')}`;
-}
-
 function readerInput(body = {}) {
   return {
-    name: text(body.nome ?? body.name, 200),
+    name: properName(body.nome ?? body.name),
     type: text(body.tipo ?? body.type, 100, 'Aluno') || 'Aluno',
     classSector: text(body.turma ?? body.classSector, 120)
   };
@@ -189,12 +165,19 @@ function bookInput(body = {}) {
 async function createReader(body) {
   const input = readerInput(body);
   return withTransaction(async client => {
-    const registrationCode = await nextReaderCode(client, input.type);
-    const { rows } = await client.query(
+    const temporaryCode = `PENDING-${crypto.randomUUID()}`;
+    const inserted = await client.query(
       `INSERT INTO readers (registration_code, name, reader_type, class_sector)
        VALUES ($1, $2, $3, $4)
+       RETURNING id::TEXT`,
+      [temporaryCode, input.name, input.type, input.classSector]
+    );
+    const id = Number(inserted.rows[0].id);
+    const { rows } = await client.query(
+      `UPDATE readers SET registration_code = $2
+       WHERE id = $1
        RETURNING id::TEXT, registration_code, name, reader_type, class_sector`,
-      [registrationCode, input.name, input.type, input.classSector]
+      [id, formatNumericCode(id)]
     );
     return mapReader(rows[0]);
   });
@@ -210,26 +193,12 @@ async function updateReader(idValue, body) {
       [id]
     );
     if (!currentResult.rowCount) throw new AppError(404, 'Leitor não encontrado.');
-    const current = currentResult.rows[0];
-    let registrationCode = current.registration_code;
-    const automatic = registrationCode.match(/^(ALU|PROF|FUNC|LEI)-(\d+)$/i);
-    const prefix = readerPrefix(input.type);
-    if (automatic && automatic[1].toUpperCase() !== prefix) {
-      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`reader-code:${prefix}`]);
-      const candidate = `${prefix}-${automatic[2].padStart(4, '0')}`;
-      const candidateResult = await client.query(
-        `SELECT 1 FROM readers
-         WHERE id <> $1 AND LOWER(registration_code) = LOWER($2)`,
-        [id, candidate]
-      );
-      registrationCode = candidateResult.rowCount ? await nextReaderCode(client, input.type) : candidate;
-    }
     const { rows } = await client.query(
       `UPDATE readers
-       SET registration_code = $2, name = $3, reader_type = $4, class_sector = $5, updated_at = NOW()
+       SET name = $2, reader_type = $3, class_sector = $4, updated_at = NOW()
        WHERE id = $1
        RETURNING id::TEXT, registration_code, name, reader_type, class_sector`,
-      [id, registrationCode, input.name, input.type, input.classSector]
+      [id, input.name, input.type, input.classSector]
     );
     return mapReader(rows[0]);
   });
@@ -238,16 +207,23 @@ async function updateReader(idValue, body) {
 async function createBook(body) {
   const input = bookInput(body);
   return withTransaction(async client => {
-    const code = await nextBookCode(client);
-    const { rows } = await client.query(
+    const temporaryCode = `PENDING-${crypto.randomUUID()}`;
+    const inserted = await client.query(
       `INSERT INTO books
         (code, isbn, title, author, publisher, publication_year, category, location,
          quantity, available, book_condition, lost_copies)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, $10, 0)
+       RETURNING id::TEXT`,
+      [temporaryCode, input.isbn, input.title, input.author, input.publisher, input.publicationYear,
+        input.category, input.location, input.quantity, input.condition]
+    );
+    const id = Number(inserted.rows[0].id);
+    const { rows } = await client.query(
+      `UPDATE books SET code = $2
+       WHERE id = $1
        RETURNING id::TEXT, code, isbn, title, author, publisher, publication_year,
                  category, location, quantity, available, book_condition, lost_copies`,
-      [code, input.isbn, input.title, input.author, input.publisher, input.publicationYear,
-        input.category, input.location, input.quantity, input.condition]
+      [id, formatNumericCode(id)]
     );
     return mapBook(rows[0]);
   });
@@ -508,12 +484,12 @@ async function deleteReader(idValue) {
       'SELECT 1 FROM loans WHERE reader_id = $1 AND return_date IS NULL LIMIT 1',
       [id]
     );
-    if (activeLoan.rowCount) throw new AppError(409, 'Este leitor possui um empréstimo ativo. Registre a devolução antes de excluí-lo.');
+    if (activeLoan.rowCount) throw new AppError(409, 'Este leitor possui um empréstimo ativo. Registre a devolução antes de ocultá-lo.');
     const activeReservation = await client.query(
       "SELECT 1 FROM reservations WHERE reader_id = $1 AND status = 'ativa' LIMIT 1",
       [id]
     );
-    if (activeReservation.rowCount) throw new AppError(409, 'Este leitor possui uma reserva ativa. Cancele ou atenda a reserva antes de excluí-lo.');
+    if (activeReservation.rowCount) throw new AppError(409, 'Este leitor possui uma reserva ativa. Cancele ou atenda a reserva antes de ocultá-lo.');
     await client.query('UPDATE readers SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1', [id]);
   });
 }
@@ -530,12 +506,12 @@ async function deleteBook(idValue) {
       'SELECT 1 FROM loans WHERE book_id = $1 AND return_date IS NULL LIMIT 1',
       [id]
     );
-    if (activeLoan.rowCount) throw new AppError(409, 'Este livro possui um empréstimo ativo. Registre a devolução antes de excluí-lo.');
+    if (activeLoan.rowCount) throw new AppError(409, 'Este livro possui um empréstimo ativo. Registre a devolução antes de ocultá-lo.');
     const activeReservation = await client.query(
       "SELECT 1 FROM reservations WHERE book_id = $1 AND status = 'ativa' LIMIT 1",
       [id]
     );
-    if (activeReservation.rowCount) throw new AppError(409, 'Este livro possui uma reserva ativa. Cancele ou atenda a reserva antes de excluí-lo.');
+    if (activeReservation.rowCount) throw new AppError(409, 'Este livro possui uma reserva ativa. Cancele ou atenda a reserva antes de ocultá-lo.');
     await client.query('UPDATE books SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1', [id]);
   });
 }
@@ -576,7 +552,7 @@ async function importLocalState(body) {
       if (readerIds.has(id)) throw new AppError(400, 'Existem leitores com IDs técnicos repetidos.');
       readerIds.add(id);
       const input = readerInput(raw);
-      const code = text(raw.matricula, 64) || await nextReaderCode(client, input.type);
+      const code = formatNumericCode(id);
       await client.query(
         `INSERT INTO readers (id, registration_code, name, reader_type, class_sector)
          VALUES ($1, $2, $3, $4, $5)`,
@@ -590,7 +566,7 @@ async function importLocalState(body) {
       if (bookIds.has(id)) throw new AppError(400, 'Existem livros com IDs técnicos repetidos.');
       bookIds.add(id);
       const input = bookInput(raw);
-      const code = text(raw.code, 64) || await nextBookCode(client);
+      const code = formatNumericCode(id);
       const available = integer(raw.available ?? input.quantity, 'Quantidade disponível', { min: 0, max: input.quantity });
       const lostCopies = integer(raw.lostCopies ?? 0, 'Exemplares perdidos', { min: 0, max: input.quantity });
       await client.query(
@@ -611,7 +587,7 @@ async function importLocalState(body) {
       await client.query(
         `INSERT INTO readers (id, registration_code, name, reader_type, class_sector, deleted_at)
          VALUES ($1, $2, '', '', '', NOW())`,
-        [id, `REMOVED-READER-${id}`]
+        [id, formatNumericCode(id)]
       );
       readerIds.add(id);
     }
@@ -622,7 +598,7 @@ async function importLocalState(body) {
         `INSERT INTO books
           (id, code, title, author, quantity, available, book_condition, lost_copies, deleted_at)
          VALUES ($1, $2, '', '', 1, 0, '', 0, NOW())`,
-        [id, `REMOVED-BOOK-${id}`]
+        [id, formatNumericCode(id)]
       );
       bookIds.add(id);
     }
