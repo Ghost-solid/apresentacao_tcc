@@ -404,8 +404,12 @@ function livroPossuiReservaAtiva(livroId) {
   return reservasAtivasDoLivro(livroId).length > 0;
 }
 
+function emprestimoEstaAberto(item) {
+  return item.status === 'ativo' || item.status === 'atrasado';
+}
+
 function livroPodeSerReservado(livro) {
-  return Number(livro.available) === 0 && emprestimos.some(item => item.bookId === livro.id && !item.returnDate);
+  return Number(livro.available) === 0 && emprestimos.some(item => item.bookId === livro.id && emprestimoEstaAberto(item));
 }
 
 function rotuloLeitorSelecao(leitor) {
@@ -598,11 +602,11 @@ $('#salvarItemBiblioteca').addEventListener('click', async evento => {
 
 function impedimentoExclusao(tipo, id) {
   if (tipo === 'leitor') {
-    if (emprestimos.some(item => item.readerId === id && !item.returnDate)) return 'Este leitor possui um empréstimo ativo. Registre a devolução antes de ocultá-lo.';
+    if (emprestimos.some(item => item.readerId === id && emprestimoEstaAberto(item))) return 'Este leitor possui um empréstimo ativo. Registre a devolução antes de ocultá-lo.';
     if (reservas.some(item => item.readerId === id && item.status === 'ativa')) return 'Este leitor possui uma reserva ativa. Cancele ou atenda a reserva antes de ocultá-lo.';
     return '';
   }
-  if (emprestimos.some(item => item.bookId === id && !item.returnDate)) return 'Este livro possui um empréstimo ativo. Registre a devolução antes de ocultá-lo.';
+  if (emprestimos.some(item => item.bookId === id && emprestimoEstaAberto(item))) return 'Este livro possui um empréstimo ativo. Registre a devolução antes de ocultá-lo.';
   if (reservas.some(item => item.bookId === id && item.status === 'ativa')) return 'Este livro possui uma reserva ativa. Cancele ou atenda a reserva antes de ocultá-lo.';
   return '';
 }
@@ -669,7 +673,7 @@ $('#janelaExclusao').addEventListener('close', () => {
 
 function obterBloqueio(leitorId) {
   const hoje = lerData(dataLocal());
-  const vencidoAberto = emprestimos.find(item => item.readerId === leitorId && !item.returnDate && lerData(item.dueDate) < hoje);
+  const vencidoAberto = emprestimos.find(item => item.readerId === leitorId && item.status === 'atrasado');
   if (vencidoAberto) return { bloqueado: true, mensagem: `Devolução atrasada desde ${formatarData(vencidoAberto.dueDate)}.` };
   const multas = emprestimos.filter(item => item.readerId === leitorId && item.penaltyUntil && lerData(item.penaltyUntil) >= hoje).sort((a, b) => lerData(b.penaltyUntil) - lerData(a.penaltyUntil));
   if (multas.length) return { bloqueado: true, mensagem: `Bloqueado para novos empréstimos até ${formatarData(multas[0].penaltyUntil)}.` };
@@ -772,7 +776,7 @@ $('#salvarEmprestimo').addEventListener('click', async evento => {
 
 function abrirFormularioDevolucao(emprestimoId) {
   const emprestimo = emprestimos.find(item => item.id === emprestimoId);
-  if (!emprestimo || emprestimo.returnDate) return;
+  if (!emprestimo || !emprestimoEstaAberto(emprestimo)) return;
   const leitor = leitores.find(item => item.id === emprestimo.readerId);
   const livro = livros.find(item => item.id === emprestimo.bookId);
   emprestimoEmDevolucao = emprestimoId;
@@ -809,7 +813,7 @@ $('#confirmarDevolucao').addEventListener('click', async evento => {
 
 async function registrarDevolucao(emprestimoId, estado, observacao) {
   const emprestimo = emprestimos.find(item => item.id === emprestimoId);
-  if (!emprestimo || emprestimo.returnDate) return;
+  if (!emprestimo || !emprestimoEstaAberto(emprestimo)) return;
   const resultado = await requisitarApi(`/api/loans/${emprestimoId}/return`, {
     method: 'POST',
     body: JSON.stringify({ condition: estado, note: observacao })
@@ -829,19 +833,23 @@ function contarAdvertencias(leitorId) {
 }
 
 function contarAtrasos(leitorId) {
-  return emprestimos.filter(item => item.readerId === leitorId && (item.penaltyUntil || (!item.returnDate && lerData(item.dueDate) < lerData(dataLocal())))).length;
+  return emprestimos.filter(item => item.readerId === leitorId && (item.penaltyUntil || item.status === 'atrasado')).length;
 }
 
 function situacaoEmprestimo(item) {
-  if (item.returnDate) return { texto: 'Devolvido', classe: 'devolvido' };
-  if (lerData(item.dueDate) < lerData(dataLocal())) return { texto: 'Atrasado', classe: 'atrasado' };
-  return { texto: 'Em andamento', classe: 'andamento' };
+  const estados = {
+    ativo: { texto: 'Em andamento', classe: 'andamento' },
+    atrasado: { texto: 'Atrasado', classe: 'atrasado' },
+    devolvido: { texto: 'Devolvido', classe: 'devolvido' },
+    perdido: { texto: 'Perdido', classe: 'perdido' }
+  };
+  return estados[item.status] || { texto: item.status || 'Não informado', classe: 'andamento' };
 }
 
 function abrirFormularioRenovacao(emprestimoId) {
   const emprestimo = emprestimos.find(item => item.id === emprestimoId);
-  if (!emprestimo || emprestimo.returnDate) return;
-  if (situacaoEmprestimo(emprestimo).classe === 'atrasado') return mostrarAviso('Empréstimos atrasados não podem ser renovados.');
+  if (!emprestimo || !emprestimoEstaAberto(emprestimo)) return;
+  if (emprestimo.status === 'atrasado') return mostrarAviso('Empréstimos atrasados não podem ser renovados.');
   if (livroPossuiReservaAtiva(emprestimo.bookId)) return mostrarAviso('Este livro possui uma reserva ativa e não pode ser renovado.');
   const bloqueio = obterBloqueio(emprestimo.readerId);
   if (bloqueio.bloqueado) return mostrarAviso(bloqueio.mensagem);
@@ -860,8 +868,8 @@ $('#confirmarRenovacao').addEventListener('click', async evento => {
   evento.preventDefault();
   if (!$('#formularioRenovacao').reportValidity()) return;
   const emprestimo = emprestimos.find(item => item.id === emprestimoEmRenovacao);
-  if (!emprestimo || emprestimo.returnDate) return mostrarAviso('Este empréstimo não está mais ativo.');
-  if (situacaoEmprestimo(emprestimo).classe === 'atrasado') return mostrarAviso('Empréstimos atrasados não podem ser renovados.');
+  if (!emprestimo || !emprestimoEstaAberto(emprestimo)) return mostrarAviso('Este empréstimo não está mais ativo.');
+  if (emprestimo.status === 'atrasado') return mostrarAviso('Empréstimos atrasados não podem ser renovados.');
   if (livroPossuiReservaAtiva(emprestimo.bookId)) return mostrarAviso('Este livro possui uma reserva ativa e não pode ser renovado.');
   const novoPrazo = $('#novaDataPrazo').value;
   if (lerData(novoPrazo) <= lerData(emprestimo.dueDate)) return mostrarAviso('O novo prazo deve ser posterior ao prazo atual.');
@@ -1004,11 +1012,11 @@ function abrirHistoricoLeitor(leitorId) {
 
 function listaPorFiltro() {
   return emprestimos.filter(item => {
-    const situacao = situacaoEmprestimo(item).classe;
     if (filtroAtual === 'todos') return true;
-    if (filtroAtual === 'ativos') return !item.returnDate;
-    if (filtroAtual === 'atrasados') return situacao === 'atrasado';
-    return situacao === 'devolvido';
+    if (filtroAtual === 'ativos') return item.status === 'ativo';
+    if (filtroAtual === 'atrasados') return item.status === 'atrasado';
+    if (filtroAtual === 'perdidos') return item.status === 'perdido';
+    return item.status === 'devolvido';
   });
 }
 
@@ -1021,9 +1029,9 @@ function renderizarEmprestimos() {
     const livro = livros.find(valor => valor.id === item.bookId);
     const situacao = situacaoEmprestimo(item);
     const possuiReservaAtiva = livroPossuiReservaAtiva(item.bookId);
-    const podeRenovar = situacao.classe !== 'atrasado' && !possuiReservaAtiva;
+    const podeRenovar = item.status === 'ativo' && !possuiReservaAtiva;
     const motivoBloqueioRenovacao = possuiReservaAtiva ? 'Livro com reserva ativa' : 'Empréstimo atrasado';
-    const resultado = item.returnDate ? (item.warning ? `Advertência: ${escaparHtml(item.returnCondition)}` : (item.penaltyUntil ? `Bloqueio até ${formatarData(item.penaltyUntil)}` : 'Concluído')) : `<div class="acoes-emprestimo"><button class="botao-pequeno renovar-emprestimo" data-id="${item.id}" ${podeRenovar ? '' : `disabled title="${motivoBloqueioRenovacao}"`}>Renovar</button><button class="botao-pequeno devolver-livro" data-id="${item.id}">Devolver</button></div>`;
+    const resultado = !emprestimoEstaAberto(item) ? (item.warning ? `Advertência: ${escaparHtml(item.returnCondition)}` : (item.penaltyUntil ? `Bloqueio até ${formatarData(item.penaltyUntil)}` : 'Concluído')) : `<div class="acoes-emprestimo"><button class="botao-pequeno renovar-emprestimo" data-id="${item.id}" ${podeRenovar ? '' : `disabled title="${motivoBloqueioRenovacao}"`}>Renovar</button><button class="botao-pequeno devolver-livro" data-id="${item.id}">Devolver</button></div>`;
     return `<tr><td>${escaparHtml(nomeLeitorParaExibicao(leitor))}</td><td>${escaparHtml(tituloLivroParaExibicao(livro))}</td><td>${formatarData(item.loanDate)}</td><td>${formatarData(item.dueDate)}</td><td>${formatarData(item.returnDate)}</td><td><span class="situacao ${situacao.classe}">${situacao.texto}</span></td><td>${resultado}</td></tr>`;
   }).join('');
   $$('.devolver-livro').forEach(botao => botao.addEventListener('click', () => abrirFormularioDevolucao(Number(botao.dataset.id))));
@@ -1031,8 +1039,8 @@ function renderizarEmprestimos() {
 }
 
 function renderizarPainel() {
-  const ativos = emprestimos.filter(item => !item.returnDate);
-  const atrasados = ativos.filter(item => situacaoEmprestimo(item).classe === 'atrasado');
+  const ativos = emprestimos.filter(item => item.status === 'ativo');
+  const atrasados = emprestimos.filter(item => item.status === 'atrasado');
   const bloqueados = leitores.filter(leitor => obterBloqueio(leitor.id).bloqueado);
   $('#totalTitulos').textContent = livros.length;
   $('#totalEmprestimos').textContent = ativos.length;
@@ -1047,8 +1055,8 @@ function renderizarPainel() {
 }
 
 function renderizarRelatorio() {
-  const ativos = emprestimos.filter(item => !item.returnDate).length;
-  const atrasados = emprestimos.filter(item => situacaoEmprestimo(item).classe === 'atrasado').length;
+  const ativos = emprestimos.filter(item => item.status === 'ativo').length;
+  const atrasados = emprestimos.filter(item => item.status === 'atrasado').length;
   const bloqueados = leitores.filter(leitor => obterBloqueio(leitor.id).bloqueado).length;
   const advertencias = emprestimos.filter(item => item.warning).length;
   const perdidos = livros.reduce((total, livro) => total + Number(livro.lostCopies || 0), 0);
@@ -1135,7 +1143,7 @@ $$('.filtro-emprestimo').forEach(botao => botao.addEventListener('click', () => 
 }));
 
 $('#botaoNotificacao').addEventListener('click', () => {
-  const atrasados = emprestimos.filter(item => situacaoEmprestimo(item).classe === 'atrasado').length;
+  const atrasados = emprestimos.filter(item => item.status === 'atrasado').length;
   mostrarAviso(atrasados ? `${atrasados} devolução(ões) atrasada(s).` : 'Nenhuma devolução atrasada.');
 });
 $('#imprimirRelatorio').addEventListener('click', () => window.print());

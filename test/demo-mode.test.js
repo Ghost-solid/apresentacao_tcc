@@ -50,4 +50,5 @@ test('modo de demonstração reconhece IDs ao registrar empréstimo', async () =
 
   assert.equal(loan.readerId, reader.id);
   assert.equal(loan.bookId, book.id);
+  assert.equal(loan.status, 'ativo');
 });

@@ -139,6 +139,21 @@ docker compose --env-file .env.docker up -d --build
 
 Troque todas as senhas do `.env.docker` antes de iniciar. Por padrão, o site responde somente neste computador em `http://localhost:8000`, e a porta do PostgreSQL não é publicada.
 
+### Atalho e inicialização automática no Windows
+
+Para que usuários sem conhecimento técnico não precisem executar comandos, crie os atalhos uma única vez:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/criar-atalhos-windows.ps1
+```
+
+O instalador cria:
+
+- **Iniciar DS Legacy** na Área de Trabalho: inicia o Docker Desktop quando necessário, garante que aplicação e PostgreSQL estejam ativos e abre o sistema no navegador;
+- **DS Legacy - Inicio automatico** na pasta de inicialização do Windows: prepara o servidor automaticamente quando o responsável entra no computador.
+
+Os comandos são idempotentes e podem ser executados novamente sem duplicar os serviços. O computador precisa permanecer ligado e sem suspensão durante o período de uso.
+
 ## Hospedar no computador do trabalho
 
 O computador do trabalho pode hospedar o site e o banco juntos com Docker Compose. Há três modos de acesso:
@@ -191,10 +206,12 @@ Os valores antigos não são apagados automaticamente, servindo como cópia temp
 | `app_sessions` | Sessões autenticadas com prazo de expiração |
 | `readers` | Alunos, professores e funcionários |
 | `books` | Livros, identificação e estoque |
-| `loans` | Empréstimos, devoluções, bloqueios e renovações |
+| `loans` | Empréstimos, devoluções, bloqueios, renovações e status persistido |
 | `reservations` | Reservas, fila e situação do atendimento |
 
 Leitores e livros ocultados permanecem arquivados no banco com seus dados essenciais, mantendo os históricos concluídos íntegros.
+
+Cada empréstimo possui um `status` entre `ativo`, `atrasado`, `devolvido` e `perdido`. Um trigger sincroniza o campo quando prazo, devolução ou perda são alterados. Como a passagem do tempo não dispara triggers no PostgreSQL, a API também executa `refresh_loan_statuses()` antes das consultas para persistir vencimentos automaticamente.
 
 ## Segurança
 

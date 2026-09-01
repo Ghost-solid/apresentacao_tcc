@@ -139,6 +139,11 @@
   color: #27844b;
 }
 
+.situacao.perdido {
+  background: #f0e6f7;
+  color: #70458b;
+}
+
 .aviso-bloqueio {
   margin: 9px 0 0;
   padding: 9px;

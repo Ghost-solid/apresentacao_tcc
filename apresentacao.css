@@ -1109,6 +1109,7 @@ tbody tr:last-child td {
 .situacao.andamento { background: #e5eef2; color: #2d6681; }
 .situacao.atrasado { background: #f8dfdc; color: #a4463b; }
 .situacao.devolvido { background: #e0eee5; color: #397055; }
+.situacao.perdido { background: #eee5f5; color: #70458b; }
 
 .botao-pequeno {
   border-color: #d9d2c7;

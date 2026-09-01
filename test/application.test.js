@@ -104,11 +104,43 @@ test('esquema PostgreSQL é executável e cria todas as entidades centrais', asy
       `INSERT INTO books (code, title)
        VALUES ('LIV-0001', 'Livro antigo')`
     );
+    await database.exec(`
+      DROP TRIGGER trg_loans_sync_status ON loans;
+      ALTER TABLE loans DROP COLUMN status;
+      INSERT INTO loans (reader_id, book_id, loan_date, due_date)
+      SELECT readers.id, books.id, CURRENT_DATE - 2, CURRENT_DATE - 1
+      FROM readers CROSS JOIN books
+      WHERE readers.name = 'Leitor antigo' AND books.title = 'Livro antigo';
+    `);
     await database.exec(schema);
     const migratedReader = await database.query('SELECT registration_code FROM readers WHERE name = $1', ['Leitor antigo']);
     const migratedBook = await database.query('SELECT code FROM books WHERE title = $1', ['Livro antigo']);
+    const migratedLoan = await database.query('SELECT id, status FROM loans');
+    const statusConstraint = await database.query(
+      `SELECT pg_get_constraintdef(oid) AS definition
+       FROM pg_constraint
+       WHERE conrelid = 'loans'::regclass AND conname = 'loans_status_check'`
+    );
     assert.equal(migratedReader.rows[0].registration_code, '0001');
     assert.equal(migratedBook.rows[0].code, '0001');
+    assert.equal(migratedLoan.rows[0].status, 'atrasado', 'Dados antigos devem receber o status correspondente.');
+    assert.match(statusConstraint.rows[0].definition, /ativo.*devolvido.*perdido.*atrasado/);
+
+    let changedLoan = await database.query(
+      'UPDATE loans SET return_date = CURRENT_DATE WHERE id = $1 RETURNING status',
+      [migratedLoan.rows[0].id]
+    );
+    assert.equal(changedLoan.rows[0].status, 'devolvido');
+    changedLoan = await database.query(
+      'UPDATE loans SET book_lost = TRUE WHERE id = $1 RETURNING status',
+      [migratedLoan.rows[0].id]
+    );
+    assert.equal(changedLoan.rows[0].status, 'perdido');
+    changedLoan = await database.query(
+      "UPDATE loans SET status = 'ativo' WHERE id = $1 RETURNING status",
+      [migratedLoan.rows[0].id]
+    );
+    assert.equal(changedLoan.rows[0].status, 'perdido', 'O trigger deve corrigir alteracoes manuais inconsistentes.');
   } finally {
     await database.close();
   }

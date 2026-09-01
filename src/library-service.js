@@ -95,6 +95,7 @@ function mapLoan(row) {
     returnNote: row.return_note,
     warning: row.warning,
     bookLost: row.book_lost,
+    status: row.status,
     renewals: Array.isArray(row.renewals) ? row.renewals : []
   };
 }
@@ -109,7 +110,12 @@ function mapReservation(row) {
   };
 }
 
+async function refreshLoanStatuses(connection = pool) {
+  await connection.query('SELECT refresh_loan_statuses()');
+}
+
 async function loadState(connection = pool) {
+  await refreshLoanStatuses(connection);
   const [readerResult, bookResult, loanResult, reservationResult] = await Promise.all([
     connection.query(
       `SELECT id::TEXT, registration_code, name, reader_type, class_sector
@@ -123,7 +129,7 @@ async function loadState(connection = pool) {
     connection.query(
       `SELECT id::TEXT, reader_id::TEXT, book_id::TEXT,
               loan_date::TEXT, due_date::TEXT, return_date::TEXT, penalty_until::TEXT,
-              responsible, return_condition, return_note, warning, book_lost, renewals
+              responsible, return_condition, return_note, warning, book_lost, status, renewals
        FROM loans ORDER BY id DESC`
     ),
     connection.query(
@@ -261,9 +267,10 @@ async function updateBook(idValue, body) {
 }
 
 async function readerBlock(client, readerId) {
+  await refreshLoanStatuses(client);
   const overdue = await client.query(
     `SELECT due_date::TEXT FROM loans
-     WHERE reader_id = $1 AND return_date IS NULL AND due_date < CURRENT_DATE
+     WHERE reader_id = $1 AND status = 'atrasado'
      ORDER BY due_date LIMIT 1`,
     [readerId]
   );
@@ -318,7 +325,7 @@ async function createLoan(body, user) {
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id::TEXT, reader_id::TEXT, book_id::TEXT, loan_date::TEXT, due_date::TEXT,
                  return_date::TEXT, penalty_until::TEXT, responsible, return_condition,
-                 return_note, warning, book_lost, renewals`,
+                 return_note, warning, book_lost, status, renewals`,
       [readerId, bookId, loanDate, dueDate, user.name]
     );
     await client.query('UPDATE books SET available = available - 1, updated_at = NOW() WHERE id = $1', [bookId]);
@@ -347,18 +354,21 @@ async function returnLoan(idValue, body) {
   if (warning && !note) throw new AppError(400, 'Descreva o problema encontrado no livro.');
 
   return withTransaction(async client => {
+    await refreshLoanStatuses(client);
     const loanResult = await client.query(
       `SELECT id::TEXT, reader_id::TEXT, book_id::TEXT, loan_date::TEXT, due_date::TEXT,
               return_date::TEXT, penalty_until::TEXT, responsible, return_condition,
-              return_note, warning, book_lost, renewals
+              return_note, warning, book_lost, status, renewals
        FROM loans WHERE id = $1 FOR UPDATE`,
       [id]
     );
     if (!loanResult.rowCount) throw new AppError(404, 'Empréstimo não encontrado.');
-    if (loanResult.rows[0].return_date) throw new AppError(409, 'Este empréstimo já foi devolvido.');
+    if (!['ativo', 'atrasado'].includes(loanResult.rows[0].status)) {
+      throw new AppError(409, 'Este empréstimo já foi encerrado.');
+    }
     const todayResult = await client.query('SELECT CURRENT_DATE::TEXT AS today');
     const today = todayResult.rows[0].today;
-    const overdue = loanResult.rows[0].due_date < today;
+    const overdue = loanResult.rows[0].status === 'atrasado';
     const penaltyUntil = overdue ? addOneMonth(today) : null;
     const bookLost = condition === 'Livro perdido';
 
@@ -369,7 +379,7 @@ async function returnLoan(idValue, body) {
        WHERE id = $1
        RETURNING id::TEXT, reader_id::TEXT, book_id::TEXT, loan_date::TEXT, due_date::TEXT,
                  return_date::TEXT, penalty_until::TEXT, responsible, return_condition,
-                 return_note, warning, book_lost, renewals`,
+                 return_note, warning, book_lost, status, renewals`,
       [id, today, condition, note, warning, bookLost, penaltyUntil]
     );
     if (bookLost) {
@@ -393,19 +403,20 @@ async function renewLoan(idValue, body, user) {
   const id = positiveId(idValue, 'Empréstimo');
   const newDueDate = date(body.newDueDate, 'Novo prazo');
   return withTransaction(async client => {
+    await refreshLoanStatuses(client);
     const loanResult = await client.query(
       `SELECT id::TEXT, reader_id::TEXT, book_id::TEXT, loan_date::TEXT, due_date::TEXT,
               return_date::TEXT, penalty_until::TEXT, responsible, return_condition,
-              return_note, warning, book_lost, renewals
+              return_note, warning, book_lost, status, renewals
        FROM loans WHERE id = $1 FOR UPDATE`,
       [id]
     );
     if (!loanResult.rowCount) throw new AppError(404, 'Empréstimo não encontrado.');
     const loan = loanResult.rows[0];
-    if (loan.return_date) throw new AppError(409, 'Este empréstimo já foi devolvido.');
+    if (loan.status === 'atrasado') throw new AppError(409, 'Empréstimos atrasados não podem ser renovados.');
+    if (loan.status !== 'ativo') throw new AppError(409, 'Este empréstimo já foi encerrado.');
     const todayResult = await client.query('SELECT CURRENT_DATE::TEXT AS today');
     const today = todayResult.rows[0].today;
-    if (loan.due_date < today) throw new AppError(409, 'Empréstimos atrasados não podem ser renovados.');
     if (newDueDate <= loan.due_date) throw new AppError(400, 'O novo prazo deve ser posterior ao prazo atual.');
     const block = await readerBlock(client, Number(loan.reader_id));
     if (block.blocked) throw new AppError(409, block.message, 'READER_BLOCKED');
@@ -421,7 +432,7 @@ async function renewLoan(idValue, body, user) {
        WHERE id = $1
        RETURNING id::TEXT, reader_id::TEXT, book_id::TEXT, loan_date::TEXT, due_date::TEXT,
                  return_date::TEXT, penalty_until::TEXT, responsible, return_condition,
-                 return_note, warning, book_lost, renewals`,
+                 return_note, warning, book_lost, status, renewals`,
       [id, newDueDate, JSON.stringify(renewals)]
     );
     return mapLoan(rows[0]);
@@ -432,6 +443,7 @@ async function createReservation(body) {
   const bookId = positiveId(body.bookId, 'Livro');
   const readerId = positiveId(body.readerId, 'Leitor');
   return withTransaction(async client => {
+    await refreshLoanStatuses(client);
     const readerResult = await client.query(
       'SELECT id FROM readers WHERE id = $1 AND deleted_at IS NULL FOR UPDATE',
       [readerId]
@@ -444,7 +456,7 @@ async function createReservation(body) {
     if (!bookResult.rowCount) throw new AppError(404, 'Livro não encontrado.');
     if (bookResult.rows[0].available > 0) throw new AppError(409, 'Este livro possui exemplar disponível e não precisa ser reservado.');
     const activeLoan = await client.query(
-      'SELECT 1 FROM loans WHERE book_id = $1 AND return_date IS NULL LIMIT 1',
+      "SELECT 1 FROM loans WHERE book_id = $1 AND status IN ('ativo', 'atrasado') LIMIT 1",
       [bookId]
     );
     if (!activeLoan.rowCount) throw new AppError(409, 'Este livro não está disponível para reserva.');
@@ -475,13 +487,14 @@ async function cancelReservation(idValue) {
 async function deleteReader(idValue) {
   const id = positiveId(idValue, 'Leitor');
   return withTransaction(async client => {
+    await refreshLoanStatuses(client);
     const record = await client.query(
       'SELECT id FROM readers WHERE id = $1 AND deleted_at IS NULL FOR UPDATE',
       [id]
     );
     if (!record.rowCount) throw new AppError(404, 'Leitor não encontrado.');
     const activeLoan = await client.query(
-      'SELECT 1 FROM loans WHERE reader_id = $1 AND return_date IS NULL LIMIT 1',
+      "SELECT 1 FROM loans WHERE reader_id = $1 AND status IN ('ativo', 'atrasado') LIMIT 1",
       [id]
     );
     if (activeLoan.rowCount) throw new AppError(409, 'Este leitor possui um empréstimo ativo. Registre a devolução antes de ocultá-lo.');
@@ -497,13 +510,14 @@ async function deleteReader(idValue) {
 async function deleteBook(idValue) {
   const id = positiveId(idValue, 'Livro');
   return withTransaction(async client => {
+    await refreshLoanStatuses(client);
     const record = await client.query(
       'SELECT id FROM books WHERE id = $1 AND deleted_at IS NULL FOR UPDATE',
       [id]
     );
     if (!record.rowCount) throw new AppError(404, 'Livro não encontrado.');
     const activeLoan = await client.query(
-      'SELECT 1 FROM loans WHERE book_id = $1 AND return_date IS NULL LIMIT 1',
+      "SELECT 1 FROM loans WHERE book_id = $1 AND status IN ('ativo', 'atrasado') LIMIT 1",
       [id]
     );
     if (activeLoan.rowCount) throw new AppError(409, 'Este livro possui um empréstimo ativo. Registre a devolução antes de ocultá-lo.');

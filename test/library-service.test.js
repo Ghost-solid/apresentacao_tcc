@@ -114,6 +114,7 @@ test('regras de leitores, livros, empréstimos, reservas, renovação e devoluç
     loanDate: isoDate(),
     dueDate: isoDate(7)
   }, { name: 'Bibliotecária' });
+  assert.equal(loan.status, 'ativo');
 
   let state = await library.loadState();
   assert.equal(state.books[0].available, 0);
@@ -135,6 +136,7 @@ test('regras de leitores, livros, empréstimos, reservas, renovação e devoluç
   await library.returnLoan(loan.id, { condition: 'Bom', note: '' });
   state = await library.loadState();
   assert.equal(state.books[0].available, 1);
+  assert.equal(state.loans.find(item => item.id === loan.id).status, 'devolvido');
 
   const reservedLoan = await library.createLoan({
     readerId: secondReader.id,
@@ -146,12 +148,23 @@ test('regras de leitores, livros, empréstimos, reservas, renovação e devoluç
   assert.equal(state.reservations.find(item => item.id === reservation.id).status, 'atendida');
 
   await library.returnLoan(reservedLoan.id, { condition: 'Bom', note: '' });
+  const lostLoan = await library.createLoan({
+    readerId: firstReader.id,
+    bookId: book.id,
+    loanDate: isoDate(),
+    dueDate: isoDate(7)
+  }, { name: 'Bibliotecária' });
+  const lostReturn = await library.returnLoan(lostLoan.id, {
+    condition: 'Livro perdido',
+    note: 'Exemplar informado como perdido pelo leitor.'
+  });
+  assert.equal(lostReturn.status, 'perdido');
   await library.deleteBook(book.id);
   await library.deleteReader(firstReader.id);
   state = await library.loadState();
   assert.equal(state.books.length, 0);
   assert.equal(state.readers.length, 1);
-  assert.equal(state.loans.length, 2, 'O histórico deve ser preservado após ocultar os cadastros.');
+  assert.equal(state.loans.length, 3, 'O histórico deve ser preservado após ocultar os cadastros.');
 
   const archivedBook = await connection.query(
     'SELECT code, title, deleted_at IS NOT NULL AS archived FROM books WHERE id = $1',
