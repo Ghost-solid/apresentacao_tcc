@@ -139,10 +139,127 @@ textarea:focus-visible {
   border-radius: 50%;
 }
 
+.biblioteca-animada {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.livro-flutuante {
+  position: absolute;
+  width: 76px;
+  height: 23px;
+  border: 1px solid rgba(247, 223, 182, 0.28);
+  border-radius: 3px 9px 9px 3px;
+  background: linear-gradient(180deg, rgba(247, 223, 182, 0.2), rgba(195, 138, 59, 0.08));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.13), inset 5px 0 rgba(247, 223, 182, 0.08);
+  opacity: 0.68;
+}
+
+.livro-flutuante::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 9px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.livro-flutuante::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  bottom: 5px;
+  width: 45px;
+  height: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.livro-flutuante-um {
+  top: 14%;
+  right: 8%;
+  animation: flutuar-livro-um 7s ease-in-out infinite;
+}
+
+.livro-flutuante-dois {
+  right: 18%;
+  bottom: 18%;
+  width: 92px;
+  animation: flutuar-livro-dois 9s ease-in-out infinite;
+}
+
+.livro-flutuante-tres {
+  bottom: 8%;
+  left: 9%;
+  width: 62px;
+  opacity: 0.42;
+  animation: flutuar-livro-tres 8s ease-in-out infinite;
+}
+
+.folha-flutuante {
+  position: absolute;
+  width: 31px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.19);
+  border-radius: 3px;
+  background:
+    linear-gradient(135deg, transparent 7px, rgba(255, 255, 255, 0.08) 0),
+    repeating-linear-gradient(to bottom, transparent 0 8px, rgba(255, 255, 255, 0.1) 9px 10px);
+  opacity: 0.56;
+}
+
+.folha-flutuante-um {
+  top: 36%;
+  right: 13%;
+  animation: flutuar-folha-um 10s ease-in-out infinite;
+}
+
+.folha-flutuante-dois {
+  top: 9%;
+  left: 9%;
+  opacity: 0.32;
+  animation: flutuar-folha-dois 12s ease-in-out infinite;
+}
+
+@keyframes flutuar-livro-um {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(9deg); }
+  50% { transform: translate3d(-12px, -16px, 0) rotate(4deg); }
+}
+
+@keyframes flutuar-livro-dois {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-7deg); }
+  50% { transform: translate3d(14px, -12px, 0) rotate(-2deg); }
+}
+
+@keyframes flutuar-livro-tres {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(5deg); }
+  50% { transform: translate3d(9px, -13px, 0) rotate(10deg); }
+}
+
+@keyframes flutuar-folha-um {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(12deg); }
+  50% { transform: translate3d(-15px, 17px, 0) rotate(2deg); }
+}
+
+@keyframes flutuar-folha-dois {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-11deg); }
+  50% { transform: translate3d(16px, 14px, 0) rotate(-3deg); }
+}
+
 .conteudo-login-institucional {
   position: relative;
   z-index: 1;
   width: min(520px, 100%);
+  animation: revelar-conteudo-login 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes revelar-conteudo-login {
+  from { opacity: 0; transform: translate3d(-28px, 0, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 .selo-login {
@@ -168,6 +285,12 @@ textarea:focus-visible {
   border-radius: 50%;
   background: var(--dourado);
   box-shadow: 0 0 0 4px rgba(195, 138, 59, 0.15);
+  animation: pulsar-selo-login 2.8s ease-out infinite;
+}
+
+@keyframes pulsar-selo-login {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(195, 138, 59, 0.15); }
+  50% { box-shadow: 0 0 0 9px rgba(195, 138, 59, 0); }
 }
 
 .informacoes-login img {
@@ -178,6 +301,12 @@ textarea:focus-visible {
   border: 3px solid rgba(255, 255, 255, 0.72);
   border-radius: 24px;
   box-shadow: 0 22px 42px rgba(0, 0, 0, 0.28);
+  animation: respirar-logo-login 5s ease-in-out infinite;
+}
+
+@keyframes respirar-logo-login {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-7px) rotate(-1deg); }
 }
 
 .chamada-login {
@@ -236,6 +365,12 @@ textarea:focus-visible {
   border-radius: 18px;
   background: linear-gradient(145deg, #fffefa, #faf7f0);
   box-shadow: var(--sombra-elevada);
+  animation: revelar-cartao-login 0.8s 0.12s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes revelar-cartao-login {
+  from { opacity: 0; transform: translate3d(28px, 0, 0) scale(0.985); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
 .cartao-login::before {
@@ -272,6 +407,39 @@ dialog textarea {
   border: 1px solid #d6d2c9;
   border-radius: 9px;
   background: #fffefa;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.cartao-login > .botao-principal {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 22px rgba(10, 55, 78, 0.18);
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.cartao-login > .botao-principal::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  bottom: -50%;
+  left: -45%;
+  width: 28%;
+  transform: translateX(-180%) skewX(-20deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.36), transparent);
+}
+
+.cartao-login > .botao-principal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(10, 55, 78, 0.24);
+}
+
+.cartao-login > .botao-principal:hover::after {
+  transform: translateX(650%) skewX(-20deg);
+  transition: transform 700ms ease;
+}
+
+.cartao-login > .botao-principal:active {
+  transform: translateY(0);
 }
 
 .cartao-login input:focus,
@@ -1179,6 +1347,11 @@ dialog::backdrop {
 }
 
 @media (max-width: 560px) {
+  .livro-flutuante-tres,
+  .folha-flutuante-dois {
+    display: none;
+  }
+
   .recursos-login span:nth-child(3) {
     display: none;
   }
@@ -1202,6 +1375,7 @@ dialog::backdrop {
   *::after {
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }

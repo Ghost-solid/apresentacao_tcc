@@ -46,6 +46,43 @@ test('interface usa a API e mantém localStorage apenas para marcar a migração
   assert.doesNotMatch(source, /localStorage\.setItem\('ds_(readers|library|loans|reservations)'/);
 });
 
+test('formulários usam seletores pesquisáveis únicos e podem ser cancelados vazios', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'interacao.js'), 'utf8');
+  for (const id of ['leitorEmprestimo', 'livroEmprestimo', 'livroReserva', 'leitorReserva']) {
+    assert.match(html, new RegExp(`<input id="${id}"[^>]+list="[^"]+"`));
+    assert.doesNotMatch(html, new RegExp(`<select id="${id}"`));
+  }
+  assert.doesNotMatch(source, /pesquisa(Leitor|Livro)(Emprestimo|Reserva)/);
+  const botoesDeSaida = html.match(/<button[^>]+data-fechar-dialog[^>]*>/g) || [];
+  assert.ok(botoesDeSaida.length > 0);
+  assert.ok(botoesDeSaida.every(botao => /type="button"/.test(botao)));
+  assert.doesNotMatch(html, /<button[^>]+value="cancel"/);
+  assert.match(source, /closest\('dialog'\)\?\.close\(\)/);
+});
+
+test('Estoque permite escolher cada campo da pesquisa', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'interacao.js'), 'utf8');
+  assert.match(html, /<select id="campoPesquisaBiblioteca"/);
+  for (const campo of ['todos', 'id', 'titulo', 'autor', 'editora', 'categoria', 'isbn', 'ano', 'local', 'total', 'disponiveis', 'perdidos', 'estado']) {
+    assert.match(html, new RegExp(`<option value="${campo}">`));
+    if (campo !== 'todos') assert.match(source, new RegExp(`${campo}: \\[`));
+  }
+  assert.match(source, /livroCorrespondePesquisa\(livro, termo, campo\)/);
+});
+
+test('login tem animações temáticas com alternativa de movimento reduzido', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const styles = fs.readFileSync(path.join(__dirname, '..', 'apresentacao.css'), 'utf8');
+  assert.match(html, /class="biblioteca-animada" aria-hidden="true"/);
+  assert.match(styles, /@keyframes flutuar-livro-um/);
+  assert.match(styles, /@keyframes revelar-cartao-login/);
+  assert.match(styles, /@keyframes respirar-logo-login/);
+  assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(styles, /animation-duration: 0\.01ms !important/);
+});
+
 test('esquema PostgreSQL é executável e cria todas as entidades centrais', async () => {
   const schema = fs.readFileSync(path.join(__dirname, '..', 'database', 'schema.sql'), 'utf8');
   const database = new PGlite();
@@ -59,6 +96,19 @@ test('esquema PostgreSQL é executável e cria todas as entidades centrais', asy
     for (const table of ['app_users', 'app_sessions', 'readers', 'books', 'loans', 'reservations']) {
       assert.ok(tables.has(table), `Tabela ausente: ${table}`);
     }
+    await database.query(
+      `INSERT INTO readers (registration_code, name, reader_type)
+       VALUES ('ALU-0001', 'Leitor antigo', 'Aluno')`
+    );
+    await database.query(
+      `INSERT INTO books (code, title)
+       VALUES ('LIV-0001', 'Livro antigo')`
+    );
+    await database.exec(schema);
+    const migratedReader = await database.query('SELECT registration_code FROM readers WHERE name = $1', ['Leitor antigo']);
+    const migratedBook = await database.query('SELECT code FROM books WHERE title = $1', ['Livro antigo']);
+    assert.equal(migratedReader.rows[0].registration_code, '0001');
+    assert.equal(migratedBook.rows[0].code, '0001');
   } finally {
     await database.close();
   }

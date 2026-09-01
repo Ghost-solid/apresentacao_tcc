@@ -90,16 +90,22 @@ test('API exige sessão e autentica com senha protegida no banco', async () => {
 });
 
 test('regras de leitores, livros, empréstimos, reservas, renovação e devolução', async () => {
-  const firstReader = await library.createReader({ nome: 'Ana', tipo: 'Aluno', turma: '1º A' });
-  assert.equal(firstReader.matricula, 'ALU-0001');
+  const firstReader = await library.createReader({ nome: 'aNA mÁrIA', tipo: 'Aluno', turma: '1º A' });
+  assert.equal(firstReader.matricula, '0001');
+  assert.equal(firstReader.nome, 'Ana Mária');
 
-  const updatedReader = await library.updateReader(firstReader.id, { nome: 'Ana', tipo: 'Professor', turma: 'Docentes' });
-  assert.equal(updatedReader.matricula, 'PROF-0001');
+  const updatedReader = await library.updateReader(firstReader.id, { nome: 'aNA mÁrIA', tipo: 'Professor', turma: 'Docentes' });
+  assert.equal(updatedReader.matricula, '0001', 'O ID original deve permanecer fixo após editar o tipo.');
+  assert.equal(updatedReader.nome, 'Ana Mária');
+  await assert.rejects(
+    library.createReader({ nome: 'Ana 123', tipo: 'Aluno' }),
+    /apenas letras e espaços/
+  );
   const secondReader = await library.createReader({ nome: 'Bruno', tipo: 'Professor', turma: 'Docentes' });
-  assert.equal(secondReader.matricula, 'PROF-0002');
+  assert.equal(secondReader.matricula, '0002');
 
   const book = await library.createBook({ title: 'Livro de teste', author: 'Autora', quantity: 1, condition: 'Bom' });
-  assert.equal(book.code, 'LIV-0001');
+  assert.equal(book.code, '0001');
   assert.equal(book.available, 1);
 
   const loan = await library.createLoan({
@@ -141,7 +147,20 @@ test('regras de leitores, livros, empréstimos, reservas, renovação e devoluç
 
   await library.returnLoan(reservedLoan.id, { condition: 'Bom', note: '' });
   await library.deleteBook(book.id);
+  await library.deleteReader(firstReader.id);
   state = await library.loadState();
   assert.equal(state.books.length, 0);
-  assert.equal(state.loans.length, 2, 'O histórico deve ser preservado após excluir o livro.');
+  assert.equal(state.readers.length, 1);
+  assert.equal(state.loans.length, 2, 'O histórico deve ser preservado após ocultar os cadastros.');
+
+  const archivedBook = await connection.query(
+    'SELECT code, title, deleted_at IS NOT NULL AS archived FROM books WHERE id = $1',
+    [book.id]
+  );
+  const archivedReader = await connection.query(
+    'SELECT registration_code, name, deleted_at IS NOT NULL AS archived FROM readers WHERE id = $1',
+    [firstReader.id]
+  );
+  assert.deepEqual(archivedBook.rows[0], { code: '0001', title: 'Livro de teste', archived: true });
+  assert.deepEqual(archivedReader.rows[0], { registration_code: '0001', name: 'Ana Mária', archived: true });
 });

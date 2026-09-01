@@ -16,6 +16,7 @@ process.env.DIRECTOR_USERNAME = '';
 process.env.DIRECTOR_PASSWORD = '';
 
 const { pool, initializeDatabase, demoMode } = require('../src/database');
+const library = require('../src/library-service');
 
 after(async () => {
   await pool.end();
@@ -32,4 +33,21 @@ test('modo de demonstração cria uma conta utilizável sem PostgreSQL externo',
   assert.equal(rows[0].username, 'biblioteca');
   assert.equal(rows[0].role, 'Biblioteca');
   assert.equal(await bcrypt.compare('Biblioteca@123', rows[0].password_hash), true);
+});
+
+test('modo de demonstração reconhece IDs ao registrar empréstimo', async () => {
+  const reader = await library.createReader({ nome: 'Leitor demonstração', tipo: 'Aluno', turma: '1º Ano A' });
+  const book = await library.createBook({ title: 'Livro demonstração', author: 'Autor', quantity: 1 });
+  const today = new Date();
+  const dueDate = new Date(today);
+  dueDate.setDate(dueDate.getDate() + 7);
+  const loan = await library.createLoan({
+    readerId: reader.id,
+    bookId: book.id,
+    loanDate: today.toISOString().slice(0, 10),
+    dueDate: dueDate.toISOString().slice(0, 10)
+  }, { name: 'Usuário de demonstração' });
+
+  assert.equal(loan.readerId, reader.id);
+  assert.equal(loan.bookId, book.id);
 });

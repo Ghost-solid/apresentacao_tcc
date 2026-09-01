@@ -35,9 +35,9 @@ function createDemoPool() {
       const result = await database.query(sql, parameters);
       return {
         ...result,
-        rowCount: Number.isInteger(result.affectedRows)
-          ? result.affectedRows
-          : (Array.isArray(result.rows) ? result.rows.length : 0)
+        rowCount: Number.isInteger(result.rowCount)
+          ? result.rowCount
+          : (Array.isArray(result.rows) ? result.rows.length : (result.affectedRows ?? 0))
       };
     },
     end() {
