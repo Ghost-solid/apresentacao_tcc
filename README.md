@@ -196,7 +196,18 @@ Se o protótipo era aberto diretamente como arquivo ou em outro endereço:
 4. Clique em **Selecionar backup** e escolha o JSON exportado.
 5. Entre com uma conta; o backup será importado se o banco ainda estiver vazio.
 
-Os valores antigos não são apagados automaticamente, servindo como cópia temporária até a migração ser conferida. O arquivo `aliceplinio.sql` continua apenas como referência histórica de uma estrutura MySQL e não é usado pela aplicação PostgreSQL.
+Os valores antigos não são apagados automaticamente, servindo como cópia temporária até a migração ser conferida. O arquivo `aliceplinio.sql` é uma fonte histórica MySQL usada somente pelo importador administrativo; a aplicação continua operando exclusivamente no PostgreSQL.
+
+### Importação do acervo MySQL legado
+
+O comando `import:legacy` lê autores, editoras, classificações e livros de `aliceplinio.sql`. Por padrão ele executa uma simulação transacional e não grava alterações. No PowerShell, com os contêineres ativos:
+
+```powershell
+$arquivoLegado = (Resolve-Path .\aliceplinio.sql).Path
+docker compose --env-file .env.docker run --rm --volume "${arquivoLegado}:/imports/aliceplinio.sql:ro" app npm run import:legacy -- /imports/aliceplinio.sql
+```
+
+Depois de conferir o relatório, acrescente `--apply` ao final para confirmar. A tabela `legacy_book_imports` registra cada ID de origem, tornando novas execuções idempotentes. ISBNs inválidos ou associados a títulos conflitantes não são usados para mesclagem.
 
 ## Estrutura do banco
 
@@ -206,6 +217,7 @@ Os valores antigos não são apagados automaticamente, servindo como cópia temp
 | `app_sessions` | Sessões autenticadas com prazo de expiração |
 | `readers` | Alunos, professores e funcionários |
 | `books` | Livros, identificação e estoque |
+| `legacy_book_imports` | Auditoria e prevenção de duplicatas da importação legada |
 | `loans` | Empréstimos, devoluções, bloqueios, renovações e status persistido |
 | `reservations` | Reservas, fila e situação do atendimento |
 
