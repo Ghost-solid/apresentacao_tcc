@@ -271,16 +271,41 @@ function encerrarSessaoVisual() {
   $('#formularioLogin').reset();
 }
 
-const botaoExportarDados = $('#exportarDadosLocais');
-botaoExportarDados.classList.toggle('oculto', !possuiDados(dadosLocaisLegados));
-botaoExportarDados.addEventListener('click', () => {
-  const conteudo = JSON.stringify({ exportedAt: new Date().toISOString(), ...dadosLocaisLegados }, null, 2);
+function baixarArquivoBackup(dados) {
+  const conteudo = JSON.stringify({ format: 'ds-legacy', version: 1, exportedAt: new Date().toISOString(), ...dados }, null, 2);
   const endereco = URL.createObjectURL(new Blob([conteudo], { type: 'application/json' }));
   const link = document.createElement('a');
   link.href = endereco;
-  link.download = `ds-legacy-backup-${dataLocal()}.json`;
+  link.download = `ds-legacy-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+  document.body.appendChild(link);
   link.click();
-  setTimeout(() => URL.revokeObjectURL(endereco), 1_000);
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(endereco), 60_000);
+}
+
+$('#baixarBackup').addEventListener('click', async () => {
+  const botao = $('#baixarBackup');
+  const estado = $('#estadoBackup');
+  botao.disabled = true;
+  botao.textContent = 'Preparando backup...';
+  estado.textContent = 'Buscando os dados atualizados no servidor...';
+  try {
+    const dados = await requisitarApi('/api/state');
+    baixarArquivoBackup(dados);
+    estado.textContent = 'Download iniciado. Guarde o arquivo para importar na outra instalação.';
+  } catch (erro) {
+    estado.textContent = `Não foi possível baixar o backup: ${erro.message}`;
+    tratarErroOperacao(erro);
+  } finally {
+    botao.disabled = false;
+    botao.textContent = 'Baixar backup';
+  }
+});
+
+const botaoExportarDados = $('#exportarDadosLocais');
+botaoExportarDados.classList.toggle('oculto', !possuiDados(dadosLocaisLegados));
+botaoExportarDados.addEventListener('click', () => {
+  baixarArquivoBackup(dadosLocaisLegados);
   $('#estadoMigracaoLogin').textContent = 'Backup criado. Abra a nova aplicação, selecione esse arquivo e depois entre.';
 });
 
@@ -367,7 +392,7 @@ $('#botaoSair').addEventListener('click', async () => {
   }
 });
 
-const nomesPaginas = { painel: 'Painel', leitores: 'Leitores', biblioteca: 'Estoque', emprestimos: 'Empréstimos', reservas: 'Reservas', relatorios: 'Relatórios' };
+const nomesPaginas = { painel: 'Painel', leitores: 'Leitores', biblioteca: 'Estoque', emprestimos: 'Empréstimos', reservas: 'Reservas', relatorios: 'Relatórios', backup: 'Backup' };
 function abrirPagina(pagina) {
   $$('.pagina').forEach(item => item.classList.remove('ativo'));
   $$('.item-navegacao').forEach(item => item.classList.toggle('ativo', item.dataset.pagina === pagina));

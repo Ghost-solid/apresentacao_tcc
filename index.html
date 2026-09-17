@@ -45,8 +45,8 @@
       <div class="contas-teste"><strong>Acesso protegido pelo servidor</strong><span>Use as credenciais fornecidas pela administração da biblioteca.</span><span>Os acessos iniciais podem ser configurados no arquivo <code>.env</code>.</span></div>
       <div class="contas-teste oculto" id="acessoDemonstracao"><strong>Modo de demonstração</strong><span>Usuário: <code>biblioteca</code></span><span>Senha: <code>Biblioteca@123</code></span></div>
       <div class="migracao-login">
-        <strong>Migração do protótipo anterior</strong>
-        <span id="estadoMigracaoLogin">Se os dados estavam em outro endereço, exporte o arquivo no navegador antigo e selecione-o aqui antes de entrar.</span>
+        <strong>Importar backup</strong>
+        <span id="estadoMigracaoLogin">Selecione um backup do DS Legacy antes de entrar. A importação só acontece se o banco estiver vazio.</span>
         <div>
           <button class="botao-migracao oculto" id="exportarDadosLocais" type="button">Exportar dados locais</button>
           <label class="botao-migracao" for="arquivoMigracao">Selecionar backup</label>
@@ -66,6 +66,7 @@
         <button class="item-navegacao" data-pagina="emprestimos"><span class="icone-navegacao" aria-hidden="true">⇄</span><span>Empréstimos</span></button>
         <button class="item-navegacao" data-pagina="reservas"><span class="icone-navegacao" aria-hidden="true">◷</span><span>Reservas</span></button>
         <button class="item-navegacao somente-diretor" data-pagina="relatorios"><span class="icone-navegacao" aria-hidden="true">▤</span><span>Relatórios</span></button>
+        <button class="item-navegacao" data-pagina="backup"><span class="icone-navegacao" aria-hidden="true">↓</span><span>Backup</span></button>
       </nav>
       <div class="usuario-logado"><div class="circulo-usuario" id="inicialUsuario">U</div><div><strong id="nomeUsuario">Usuário</strong><span id="perfilUsuario">Perfil</span></div></div>
       <button class="sair" id="botaoSair">↪ Sair</button>
@@ -113,6 +114,17 @@
       <section class="pagina" id="relatorios">
         <div class="acoes-pagina"><div><h2>Relatório da biblioteca</h2><p>Resumo do Estoque e das movimentações.</p></div><button class="botao-principal" id="imprimirRelatorio">Imprimir relatório</button></div>
         <div class="caixa relatorio"><h3>Resumo geral</h3><p id="resumoRelatorio">Nenhum dado disponível.</p><div id="listaRelatorio"></div></div>
+      </section>
+      <section class="pagina" id="backup">
+        <div class="acoes-pagina"><div><h2>Backup dos dados</h2><p>Guarde uma cópia para usar em outra instalação do DS Legacy.</p></div></div>
+        <div class="caixa relatorio">
+          <h3>Baixar backup</h3>
+          <p>O arquivo inclui os leitores e livros cadastrados nas listas, o estoque, os empréstimos, as devoluções, as renovações e as reservas. Contas e senhas de acesso não são incluídas.</p>
+          <button type="button" class="botao-principal" id="baixarBackup">Baixar backup</button>
+          <p id="estadoBackup" role="status" aria-live="polite"></p>
+          <h3>Usar em outro lugar</h3>
+          <p>Na tela de login da outra instalação, clique em <strong>Selecionar backup</strong>, escolha o arquivo baixado e entre com uma conta dessa instalação. O banco de destino precisa estar vazio; os dados existentes não serão substituídos.</p>
+        </div>
       </section>
     </main>
   </div>
@@ -172,7 +184,7 @@
   <dialog id="janelaBiblioteca" class="janela-grande">
     <form method="dialog" id="formularioBiblioteca">
       <div class="titulo-modal"><h2 id="tituloFormularioLivro">Cadastrar livro</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
-      <p class="explicacao-cadastro">Preencha somente os dados que desejar. O ID é criado automaticamente.</p>
+      <p class="explicacao-cadastro">Preencha somente os dados que precisam. O ID é criado automaticamente.</p>
       <div class="grade-formulario">
         <div>
           <label for="codigoLivro">ID do livro</label>
@@ -277,9 +289,9 @@
 
   <dialog id="janelaExclusao">
     <form method="dialog" id="formularioExclusao">
-      <div class="titulo-modal"><h2 id="tituloExclusao">Ocultar cadastro</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
+      <div class="titulo-modal"><h2 id="tituloExclusao">excluir cadastro</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
       <p class="mensagem-exclusao" id="mensagemExclusao"></p>
-      <p class="alerta-exclusao">O cadastro será ocultado das listas. Os dados essenciais e históricos continuarão preservados no banco.</p>
+      <p class="alerta-exclusao">O cadastro será excluido das listas. Os dados essenciais e históricos continuarão preservados no banco.</p>
       <label for="senhaExclusao">Senha da conta conectada</label>
       <input id="senhaExclusao" type="password" autocomplete="current-password" required placeholder="Digite sua senha para confirmar">
       <p class="erro-exclusao" id="erroExclusao" role="alert"></p>
