@@ -21,7 +21,11 @@ const dadosLocaisLegados = {
 
 let usuarioAtual = null;
 let leitores = [];
+let paginaLeitores = 1;
+const leitoresPorPagina = 25;
 let livros = [];
+let paginaBiblioteca = 1;
+const livrosPorPagina = 25;
 let emprestimos = [];
 let reservas = [];
 let dadosImportacaoArquivo = null;
@@ -123,6 +127,7 @@ function livroCorrespondePesquisa(livro, termo, campo = 'todos') {
 }
 
 function leitorCorrespondePesquisa(leitor, termo) {
+  if (!normalizarPesquisa(termo)) return true;
   const bloqueio = obterBloqueio(leitor.id);
   return correspondePesquisa(termo,
     leitor.nome || 'Sem nome',
@@ -255,6 +260,8 @@ function exibirSistema(usuario) {
 
 function encerrarSessaoVisual() {
   usuarioAtual = null;
+  paginaLeitores = 1;
+  paginaBiblioteca = 1;
   leitores = [];
   livros = [];
   emprestimos = [];
@@ -907,6 +914,16 @@ function ordenarBiblioteca(lista) {
 
 function renderizarBiblioteca(lista = livros) {
   const listaOrdenada = ordenarBiblioteca(lista);
+  const totalPaginas = Math.max(1, Math.ceil(listaOrdenada.length / livrosPorPagina));
+  paginaBiblioteca = Math.max(1, Math.min(paginaBiblioteca, totalPaginas));
+  const inicio = (paginaBiblioteca - 1) * livrosPorPagina;
+  const livrosDaPagina = listaOrdenada.slice(inicio, inicio + livrosPorPagina);
+  $('#resumoPaginacaoBiblioteca').textContent = lista.length
+    ? `Mostrando ${inicio + 1} a ${inicio + livrosDaPagina.length} de ${lista.length} livros`
+    : 'Nenhum livro para exibir';
+  $('#paginaAtualBiblioteca').textContent = `Página ${paginaBiblioteca} de ${totalPaginas}`;
+  $('#paginaAnteriorBiblioteca').disabled = paginaBiblioteca === 1;
+  $('#proximaPaginaBiblioteca').disabled = paginaBiblioteca === totalPaginas;
   $('#titulosBiblioteca').textContent = livros.length;
   $('#exemplaresBiblioteca').textContent = livros.reduce((total, livro) => total + Number(livro.quantity || 0), 0);
   $('#bibliotecaDisponiveis').textContent = livros.reduce((total, livro) => total + Number(livro.available || 0), 0);
@@ -917,7 +934,7 @@ function renderizarBiblioteca(lista = livros) {
   bibliotecaVazia.querySelector('span').textContent = livros.length && filtroAtivo ? 'Tente pesquisar outro termo ou alterar a categoria.' : 'Cadastre o primeiro livro do Estoque.';
   bibliotecaVazia.style.display = lista.length ? 'none' : 'flex';
   $('#tabelaBiblioteca').style.display = lista.length ? 'table' : 'none';
-  $('#tabelaBiblioteca tbody').innerHTML = lista.map(livro => `<tr><td>${escaparHtml(livro.code)}</td><td><b>${escaparHtml(livro.title || 'Sem título')}</b><small class="detalhe-livro">${escaparHtml(livro.publisher || '')} ${livro.year || ''}${Number(livro.lostCopies || 0) ? ` • ${livro.lostCopies} perdido(s)` : ''}</small></td><td>${escaparHtml(livro.author || 'Não informado')}</td><td>${escaparHtml(livro.category || 'Não informada')}</td><td>${escaparHtml(livro.isbn || '—')}</td><td>${escaparHtml(livro.location || 'Não informado')}</td><td>${livro.quantity}</td><td><b class="${Number(livro.available) === 0 ? 'estoque-baixo' : ''}">${livro.available}</b></td><td>${escaparHtml(livro.condition || 'Não informado')}</td><td><div class="acoes-emprestimo"><button class="botao-pequeno editar-livro" data-id="${livro.id}">Editar</button>${livroPodeSerReservado(livro) ? `<button class="botao-pequeno reservar-livro" data-id="${livro.id}">Reservar</button>` : ''}<button class="botao-pequeno botao-excluir excluir-livro" data-id="${livro.id}">Excluir</button></div></td></tr>`).join('');
+  $('#tabelaBiblioteca tbody').innerHTML = livrosDaPagina.map(livro => `<tr><td>${escaparHtml(livro.code)}</td><td><b>${escaparHtml(livro.title || 'Sem título')}</b><small class="detalhe-livro">${escaparHtml(livro.publisher || '')} ${livro.year || ''}${Number(livro.lostCopies || 0) ? ` • ${livro.lostCopies} perdido(s)` : ''}</small></td><td>${escaparHtml(livro.author || 'Não informado')}</td><td>${escaparHtml(livro.category || 'Não informada')}</td><td>${escaparHtml(livro.isbn || '—')}</td><td>${escaparHtml(livro.location || 'Não informado')}</td><td>${livro.quantity}</td><td><b class="${Number(livro.available) === 0 ? 'estoque-baixo' : ''}">${livro.available}</b></td><td>${escaparHtml(livro.condition || 'Não informado')}</td><td><div class="acoes-emprestimo"><button class="botao-pequeno editar-livro" data-id="${livro.id}">Editar</button>${livroPodeSerReservado(livro) ? `<button class="botao-pequeno reservar-livro" data-id="${livro.id}">Reservar</button>` : ''}<button class="botao-pequeno botao-excluir excluir-livro" data-id="${livro.id}">Excluir</button></div></td></tr>`).join('');
   $$('.editar-livro').forEach(botao => botao.addEventListener('click', () => abrirFormularioLivro(botao.dataset.id)));
   $$('.reservar-livro').forEach(botao => botao.addEventListener('click', () => abrirFormularioReserva(botao.dataset.id)));
   $$('.excluir-livro').forEach(botao => botao.addEventListener('click', () => abrirConfirmacaoExclusao('livro', botao.dataset.id)));
@@ -962,13 +979,23 @@ function renderizarReservas() {
 }
 
 function renderizarLeitores(lista = leitores) {
+  const totalPaginas = Math.max(1, Math.ceil(lista.length / leitoresPorPagina));
+  paginaLeitores = Math.max(1, Math.min(paginaLeitores, totalPaginas));
+  const inicio = (paginaLeitores - 1) * leitoresPorPagina;
+  const leitoresDaPagina = lista.slice(inicio, inicio + leitoresPorPagina);
+  $('#resumoPaginacaoLeitores').textContent = lista.length
+    ? `Mostrando ${inicio + 1} a ${inicio + leitoresDaPagina.length} de ${lista.length} leitores`
+    : 'Nenhum leitor para exibir';
+  $('#paginaAtualLeitores').textContent = `Página ${paginaLeitores} de ${totalPaginas}`;
+  $('#paginaAnteriorLeitores').disabled = paginaLeitores === 1;
+  $('#proximaPaginaLeitores').disabled = paginaLeitores === totalPaginas;
   const leitoresVazios = $('#leitoresVazios');
   const filtroAtivo = Boolean($('#pesquisaLeitor').value.trim() || $('#filtroSituacaoLeitor').value);
   leitoresVazios.querySelector('b').textContent = leitores.length && filtroAtivo ? 'Nenhum leitor encontrado' : 'Nenhum leitor cadastrado';
   leitoresVazios.querySelector('span').textContent = leitores.length && filtroAtivo ? 'Tente alterar a pesquisa ou o filtro de situação.' : 'Cadastre o primeiro leitor da biblioteca.';
   leitoresVazios.style.display = lista.length ? 'none' : 'flex';
   $('#tabelaLeitores').style.display = lista.length ? 'table' : 'none';
-  $('#tabelaLeitores tbody').innerHTML = lista.map(leitor => {
+  $('#tabelaLeitores tbody').innerHTML = leitoresDaPagina.map(leitor => {
     const bloqueio = obterBloqueio(leitor.id);
     const advertencias = contarAdvertencias(leitor.id);
     return `<tr><td>${escaparHtml(leitor.nome || 'Sem nome')}</td><td>${escaparHtml(leitor.matricula)}</td><td>${escaparHtml(leitor.tipo || 'Não informado')}</td><td>${escaparHtml(leitor.turma || 'Não informada')}</td><td><span class="contador-advertencias ${advertencias ? 'possui' : ''}">${advertencias}</span></td><td><span class="situacao ${bloqueio.bloqueado ? 'atrasado' : ''}">${bloqueio.bloqueado ? 'Bloqueado' : 'Liberado'}</span></td><td><div class="acoes-emprestimo"><button class="botao-pequeno editar-leitor" data-id="${leitor.id}">Editar</button><button class="botao-pequeno ver-historico-leitor" data-id="${leitor.id}">Histórico</button><button class="botao-pequeno emprestar-leitor" data-id="${leitor.id}" ${bloqueio.bloqueado ? 'disabled' : ''}>Emprestar</button><button class="botao-pequeno botao-excluir excluir-leitor" data-id="${leitor.id}">Ocultar</button></div></td></tr>`;
@@ -1073,17 +1100,30 @@ function renderizarTudo() {
   renderizarRelatorio();
 }
 
-$('#pesquisaBiblioteca').addEventListener('input', filtrarBiblioteca);
+function reiniciarPaginacaoBiblioteca() {
+  paginaBiblioteca = 1;
+  filtrarBiblioteca();
+}
+
+$('#paginaAnteriorBiblioteca').addEventListener('click', () => {
+  paginaBiblioteca -= 1;
+  filtrarBiblioteca();
+});
+$('#proximaPaginaBiblioteca').addEventListener('click', () => {
+  paginaBiblioteca += 1;
+  filtrarBiblioteca();
+});
+$('#pesquisaBiblioteca').addEventListener('input', reiniciarPaginacaoBiblioteca);
 $('#campoPesquisaBiblioteca').addEventListener('change', () => {
   const campo = $('#campoPesquisaBiblioteca');
   const nomeCampo = campo.options[campo.selectedIndex].textContent.toLocaleLowerCase('pt-BR');
   $('#pesquisaBiblioteca').placeholder = campo.value === 'todos'
     ? 'Pesquisar em todos os campos...'
     : `Pesquisar por ${nomeCampo}...`;
-  filtrarBiblioteca();
+  reiniciarPaginacaoBiblioteca();
 });
-$('#filtroCategoriaBiblioteca').addEventListener('change', filtrarBiblioteca);
-$('#ordenacaoBiblioteca').addEventListener('change', filtrarBiblioteca);
+$('#filtroCategoriaBiblioteca').addEventListener('change', reiniciarPaginacaoBiblioteca);
+$('#ordenacaoBiblioteca').addEventListener('change', reiniciarPaginacaoBiblioteca);
 
 function normalizarCategoria(categoria) {
   return String(categoria ?? '')
@@ -1117,8 +1157,21 @@ function filtrarBiblioteca() {
   renderizarBiblioteca(livros.filter(livro => livroCorrespondePesquisa(livro, termo, campo) && categoriaCorrespondeAoFiltro(livro.category, categoria, categoriasPadrao)));
 }
 
-$('#pesquisaLeitor').addEventListener('input', filtrarLeitores);
-$('#filtroSituacaoLeitor').addEventListener('change', filtrarLeitores);
+function reiniciarPaginacaoLeitores() {
+  paginaLeitores = 1;
+  filtrarLeitores();
+}
+
+$('#paginaAnteriorLeitores').addEventListener('click', () => {
+  paginaLeitores -= 1;
+  filtrarLeitores();
+});
+$('#proximaPaginaLeitores').addEventListener('click', () => {
+  paginaLeitores += 1;
+  filtrarLeitores();
+});
+$('#pesquisaLeitor').addEventListener('input', reiniciarPaginacaoLeitores);
+$('#filtroSituacaoLeitor').addEventListener('change', reiniciarPaginacaoLeitores);
 
 function leitorCorrespondeAoFiltro(leitor, filtro) {
   if (!filtro) return true;
