@@ -23,6 +23,15 @@ function Write-StartupLog {
   }
 }
 
+function Test-ApplicationReady {
+  try {
+    $response = Invoke-RestMethod -Uri 'http://127.0.0.1:8000/api/health' -TimeoutSec 2
+    return $response.status -eq 'ok' -and $response.database -eq 'connected'
+  } catch {
+    return $false
+  }
+}
+
 function Test-DockerReady {
   $previousErrorActionPreference = $ErrorActionPreference
   try {
@@ -52,6 +61,14 @@ function Wait-Until {
 
 try {
   Write-StartupLog 'Inicio solicitado.'
+
+  # O atalho interativo pode abrir direto; a inicializacao do Windows ainda
+  # garante todos os servicos, incluindo o backup automatico.
+  if ($AbrirNavegador -and (Test-ApplicationReady)) {
+    Start-Process "$applicationUrl/?atalho=1"
+    Write-StartupLog 'Aplicacao ja disponivel. Navegador aberto sem executar Docker Compose.'
+    return
+  }
 
   if (-not (Test-Path -LiteralPath $environmentFile)) {
     throw 'O arquivo .env.docker nao foi encontrado. Solicite ajuda ao responsavel pelo sistema.'
@@ -91,12 +108,7 @@ try {
   }
 
   Wait-Until -TimeoutSeconds 120 -ErrorMessage 'O DS Legacy nao respondeu dentro do tempo esperado.' -Condition {
-    try {
-      $response = Invoke-RestMethod -Uri "$applicationUrl/api/health" -TimeoutSec 4
-      return $response.status -eq 'ok' -and $response.database -eq 'connected'
-    } catch {
-      return $false
-    }
+    Test-ApplicationReady
   }
 
   if ($AbrirNavegador) {
