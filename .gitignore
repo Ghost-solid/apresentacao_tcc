@@ -8,3 +8,5 @@ backups/*.backup
 backups/*.dump
 npm-debug.log*
 .DS_Store
+
+backups/automatic/

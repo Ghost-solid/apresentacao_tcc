@@ -41,5 +41,29 @@ services:
     ports:
       - "${APP_BIND_ADDRESS:-127.0.0.1}:8000:8000"
 
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-ds_legacy}
+      PGDATABASE: ${POSTGRES_DB:-ds_legacy}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+    volumes:
+      - ./backups/automatic:/backups
+      - ./scripts/automatic-backup.sh:/scripts/automatic-backup.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/automatic-backup.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /backups/last-success && test $$(($$(date +%s) - $$(cat /backups/last-success))) -lt $$((BACKUP_INTERVAL_SECONDS + 600))"]
+      interval: 60s
+      timeout: 5s
+      start_period: 120s
+      retries: 3
+
 volumes:
   ds_legacy_postgres:

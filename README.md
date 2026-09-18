@@ -285,3 +285,7 @@ Apresentacao_tcc/
 ├── .env.docker.example       # Modelo do servidor Docker
 └── README.md                 # Documentação
 ```
+
+## Backup automatico completo
+
+O Docker Compose inclui copias completas a cada 24 horas, com retencao das 14 ultimas em `backups/automatic`. Consulte [configuracao, teste de restauracao e recuperacao](docs/BACKUP_COMPLETO.md).
