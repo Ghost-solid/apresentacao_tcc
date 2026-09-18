@@ -289,3 +289,15 @@ Apresentacao_tcc/
 ## Backup automatico completo
 
 O Docker Compose inclui copias completas a cada 24 horas, com retencao das 14 ultimas em `backups/automatic`. Consulte [configuracao, teste de restauracao e recuperacao](docs/BACKUP_COMPLETO.md).
+
+## Historico de acoes
+
+A direcao pode consultar **Historico de acoes**, com 25 registros por pagina buscados na API. Cada cadastro, edicao, exclusao logica, emprestimo, devolucao, renovacao, reserva, cancelamento, importacao JSON e geracao de backup JSON registra o usuario autenticado, a operacao, o identificador do registro, uma descricao e o instante da acao. Data e hora sao armazenadas com fuso e apresentadas no fuso do computador.
+
+Os registros comecam a partir desta atualizacao: nao e possivel reconstruir autores de operacoes antigas. A gravacao ocorre na mesma transacao da operacao; falhas nao geram registros de sucesso. A consulta exige perfil Diretor na API. Nao existe rota para apagar ou editar o historico. Senhas, cookies e corpos completos de requisicoes nao sao registrados. O historico preserva o nome e usuario do responsavel mesmo se sua conta mudar posteriormente.
+
+A tabela `audit_logs` e incluida nos backups completos PostgreSQL. O JSON simplificado continua sem esse historico. Rotinas administrativas externas (SQL manual, importador legado e backup automatico Docker) nao passam pelo registro de acoes da interface; seus logs operacionais continuam separados. Chamadas internas sem uma conta identificada aparecem como Sistema.
+
+### Identificacao de quem realiza a operacao
+
+Antes de cada alteracao, importacao ou geracao de backup JSON, a interface solicita o nome do operador. O campo inicia vazio a cada confirmacao. Cancelar fecha a confirmacao sem enviar a operacao. A API exige um nome de 3 a 160 caracteres e registra esse nome junto do usuario autenticado da conta compartilhada. Emprestimos e renovacoes tambem usam esse nome como responsavel. O nome e autodeclarado; a autenticacao continua sendo da conta conectada. Os registros antigos permanecem como foram gravados.

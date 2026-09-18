@@ -110,6 +110,39 @@ function mapReservation(row) {
   };
 }
 
+async function recordAudit(client, user, action, entity, entityId, description) {
+  await client.query(
+    `INSERT INTO audit_logs (user_id, username, user_name, action, entity, entity_id, description)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [user?.id || null, user?.username || 'sistema', user?.operatorName || user?.name || 'Sistema', action, entity, entityId, description]
+  );
+}
+
+async function listAudit(pageValue = 1) {
+  const requestedPage = positiveId(pageValue, 'Pagina');
+  const limit = 25;
+  const count = await pool.query('SELECT COUNT(*)::INTEGER AS total FROM audit_logs');
+  const total = count.rows[0].total;
+  const pages = Math.max(1, Math.ceil(total / limit));
+  const page = Math.min(requestedPage, pages);
+  const { rows } = await pool.query(
+    `SELECT id::TEXT, username, user_name AS "userName", action, entity,
+            entity_id::TEXT AS "entityId", description, created_at AS "createdAt"
+     FROM audit_logs ORDER BY created_at DESC, id DESC LIMIT $1 OFFSET $2`,
+    [limit, (page - 1) * limit]
+  );
+  return { entries: rows, page, pages, total };
+}
+
+async function exportBackup(user) {
+  return withTransaction(async client => {
+    await client.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+    const state = await loadState(client);
+    await recordAudit(client, user, 'backup', 'backup', null, 'Gerou backup JSON dos dados da biblioteca');
+    return state;
+  });
+}
+
 async function refreshLoanStatuses(connection = pool) {
   await connection.query('SELECT refresh_loan_statuses()');
 }
@@ -168,7 +201,7 @@ function bookInput(body = {}) {
   };
 }
 
-async function createReader(body) {
+async function createReader(body, user) {
   const input = readerInput(body);
   return withTransaction(async client => {
     const temporaryCode = `PENDING-${crypto.randomUUID()}`;
@@ -185,11 +218,12 @@ async function createReader(body) {
        RETURNING id::TEXT, registration_code, name, reader_type, class_sector`,
       [id, formatNumericCode(id)]
     );
+    await recordAudit(client, user, 'cadastrar', 'leitor', id, input.name);
     return mapReader(rows[0]);
   });
 }
 
-async function updateReader(idValue, body) {
+async function updateReader(idValue, body, user) {
   const id = positiveId(idValue, 'Leitor');
   const input = readerInput(body);
   return withTransaction(async client => {
@@ -206,11 +240,12 @@ async function updateReader(idValue, body) {
        RETURNING id::TEXT, registration_code, name, reader_type, class_sector`,
       [id, input.name, input.type, input.classSector]
     );
+    await recordAudit(client, user, 'editar', 'leitor', id, input.name);
     return mapReader(rows[0]);
   });
 }
 
-async function createBook(body) {
+async function createBook(body, user) {
   const input = bookInput(body);
   return withTransaction(async client => {
     const temporaryCode = `PENDING-${crypto.randomUUID()}`;
@@ -231,11 +266,12 @@ async function createBook(body) {
                  category, location, quantity, available, book_condition, lost_copies`,
       [id, formatNumericCode(id)]
     );
+    await recordAudit(client, user, 'cadastrar', 'livro', id, input.title);
     return mapBook(rows[0]);
   });
 }
 
-async function updateBook(idValue, body) {
+async function updateBook(idValue, body, user) {
   const id = positiveId(idValue, 'Livro');
   const input = bookInput(body);
   return withTransaction(async client => {
@@ -262,6 +298,7 @@ async function updateBook(idValue, body) {
       [id, input.isbn, input.title, input.author, input.publisher, input.publicationYear,
         input.category, input.location, input.quantity, available, input.condition]
     );
+    await recordAudit(client, user, 'editar', 'livro', id, input.title);
     return mapBook(rows[0]);
   });
 }
@@ -326,7 +363,7 @@ async function createLoan(body, user) {
        RETURNING id::TEXT, reader_id::TEXT, book_id::TEXT, loan_date::TEXT, due_date::TEXT,
                  return_date::TEXT, penalty_until::TEXT, responsible, return_condition,
                  return_note, warning, book_lost, status, renewals`,
-      [readerId, bookId, loanDate, dueDate, user.name]
+      [readerId, bookId, loanDate, dueDate, user.operatorName || user.name]
     );
     await client.query('UPDATE books SET available = available - 1, updated_at = NOW() WHERE id = $1', [bookId]);
     if (queue.rowCount) {
@@ -335,6 +372,7 @@ async function createLoan(body, user) {
         [Number(queue.rows[0].id)]
       );
     }
+    await recordAudit(client, user, 'emprestar', 'emprestimo', Number(rows[0].id), `Leitor ${readerId}; livro ${bookId}; prazo ${dueDate}`);
     return mapLoan(rows[0]);
   });
 }
@@ -345,7 +383,7 @@ function addOneMonth(isoDate) {
   return value.toISOString().slice(0, 10);
 }
 
-async function returnLoan(idValue, body) {
+async function returnLoan(idValue, body, user) {
   const id = positiveId(idValue, 'Empréstimo');
   const condition = text(body.condition, 100);
   const note = text(body.note, 4_000);
@@ -395,6 +433,7 @@ async function returnLoan(idValue, body) {
         [Number(loanResult.rows[0].book_id)]
       );
     }
+    await recordAudit(client, user, 'devolver', 'emprestimo', id, `Estado: ${condition}`);
     return mapLoan(rows[0]);
   });
 }
@@ -426,7 +465,7 @@ async function renewLoan(idValue, body, user) {
     );
     if (reservation.rowCount) throw new AppError(409, 'Este livro possui uma reserva ativa e não pode ser renovado.');
     const renewals = Array.isArray(loan.renewals) ? loan.renewals : [];
-    renewals.push({ previousDueDate: loan.due_date, newDueDate, date: today, responsible: user.name });
+    renewals.push({ previousDueDate: loan.due_date, newDueDate, date: today, responsible: user.operatorName || user.name });
     const { rows } = await client.query(
       `UPDATE loans SET due_date = $2, renewals = $3::JSONB, updated_at = NOW()
        WHERE id = $1
@@ -435,11 +474,12 @@ async function renewLoan(idValue, body, user) {
                  return_note, warning, book_lost, status, renewals`,
       [id, newDueDate, JSON.stringify(renewals)]
     );
+    await recordAudit(client, user, 'renovar', 'emprestimo', id, `Novo prazo: ${newDueDate}`);
     return mapLoan(rows[0]);
   });
 }
 
-async function createReservation(body) {
+async function createReservation(body, user) {
   const bookId = positiveId(body.bookId, 'Livro');
   const readerId = positiveId(body.readerId, 'Leitor');
   return withTransaction(async client => {
@@ -466,11 +506,12 @@ async function createReservation(body) {
        RETURNING id::TEXT, book_id::TEXT, reader_id::TEXT, reservation_date::TEXT, status`,
       [bookId, readerId]
     );
+    await recordAudit(client, user, 'reservar', 'reserva', Number(rows[0].id), `Leitor ${readerId}; livro ${bookId}`);
     return mapReservation(rows[0]);
   });
 }
 
-async function cancelReservation(idValue) {
+async function cancelReservation(idValue, user) {
   const id = positiveId(idValue, 'Reserva');
   return withTransaction(async client => {
     const { rows, rowCount } = await client.query(
@@ -480,11 +521,12 @@ async function cancelReservation(idValue) {
       [id]
     );
     if (!rowCount) throw new AppError(404, 'Reserva ativa não encontrada.');
+    await recordAudit(client, user, 'cancelar', 'reserva', id, 'Reserva cancelada');
     return mapReservation(rows[0]);
   });
 }
 
-async function deleteReader(idValue) {
+async function deleteReader(idValue, user) {
   const id = positiveId(idValue, 'Leitor');
   return withTransaction(async client => {
     await refreshLoanStatuses(client);
@@ -504,10 +546,11 @@ async function deleteReader(idValue) {
     );
     if (activeReservation.rowCount) throw new AppError(409, 'Este leitor possui uma reserva ativa. Cancele ou atenda a reserva antes de ocultá-lo.');
     await client.query('UPDATE readers SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1', [id]);
+    await recordAudit(client, user, 'excluir', 'leitor', id, 'Cadastro arquivado; historico preservado');
   });
 }
 
-async function deleteBook(idValue) {
+async function deleteBook(idValue, user) {
   const id = positiveId(idValue, 'Livro');
   return withTransaction(async client => {
     await refreshLoanStatuses(client);
@@ -527,6 +570,7 @@ async function deleteBook(idValue) {
     );
     if (activeReservation.rowCount) throw new AppError(409, 'Este livro possui uma reserva ativa. Cancele ou atenda a reserva antes de ocultá-lo.');
     await client.query('UPDATE books SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1', [id]);
+    await recordAudit(client, user, 'excluir', 'livro', id, 'Cadastro arquivado; historico preservado');
   });
 }
 
@@ -543,7 +587,7 @@ async function resetSequence(client, table) {
   );
 }
 
-async function importLocalState(body) {
+async function importLocalState(body, user) {
   const readers = collection(body.readers, 'Leitores');
   const books = collection(body.books, 'Livros');
   const loans = collection(body.loans, 'Empréstimos');
@@ -660,11 +704,14 @@ async function importLocalState(body) {
     await resetSequence(client, 'books');
     await resetSequence(client, 'loans');
     await resetSequence(client, 'reservations');
+    await recordAudit(client, user, 'importar', 'backup', null, `Importou ${readers.length} leitores, ${books.length} livros, ${loans.length} emprestimos e ${reservations.length} reservas`);
     return { migrated: true };
   });
 }
 
 module.exports = {
+  listAudit,
+  exportBackup,
   AppError,
   loadState,
   createReader,

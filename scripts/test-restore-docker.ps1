@@ -44,6 +44,8 @@ UNION ALL SELECT 'legacy_book_imports', COUNT(*) FROM legacy_book_imports;
 "@
   & docker exec $testName psql -U postgres -d restore_test -v ON_ERROR_STOP=1 -c $sql
   if ($LASTEXITCODE -ne 0) { throw "Falha na verificacao das tabelas restauradas." }
+  & docker exec $testName psql -U postgres -d restore_test -v ON_ERROR_STOP=1 -c "SELECT to_regclass('public.audit_logs') IS NOT NULL AS possui_historico_acoes;"
+  if ($LASTEXITCODE -ne 0) { throw "Falha ao verificar historico de acoes." }
   Write-Host "Restauracao validada: $resolvedBackup"
   Write-Host "O banco de producao nao foi alterado."
 } finally {

@@ -177,3 +177,77 @@ test('regras de leitores, livros, empréstimos, reservas, renovação e devoluç
   assert.deepEqual(archivedBook.rows[0], { code: '0001', title: 'Livro de teste', archived: true });
   assert.deepEqual(archivedReader.rows[0], { registration_code: '0001', name: 'Ana Mária', archived: true });
 });
+
+
+test('audit records authenticated actor, restricts access and survives archival', async () => {
+  const login = await fetch(`${baseUrl}/api/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'biblioteca', password: 'SenhaSegura@123' })
+  });
+  const cookie = login.headers.get('set-cookie').split(';')[0];
+  const headers = { Cookie: cookie, 'Content-Type': 'application/json' };
+  assert.equal((await fetch(`${baseUrl}/api/audit`)).status, 401);
+  assert.equal((await fetch(`${baseUrl}/api/audit`, { headers })).status, 403);
+  for (const operatorName of [undefined, '', '   ', 'ab', 'a'.repeat(161), { name: 'fake' }]) {
+    const invalid = await fetch(`${baseUrl}/api/readers`, {
+      method: 'POST', headers, body: JSON.stringify({ nome: 'Nao Cadastrar', operatorName })
+    });
+    assert.equal(invalid.status, 400);
+    assert.equal((await invalid.json()).code, 'OPERATOR_REQUIRED');
+  }
+  assert.equal((await connection.query("SELECT COUNT(*)::INTEGER AS total FROM readers WHERE name = 'Nao Cadastrar'")).rows[0].total, 0);
+  const response = await fetch(`${baseUrl}/api/readers`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ nome: 'Leitor Auditoria', operatorName: 'Maria da Biblioteca', username: 'forged', user: { id: 999, name: 'forged' } })
+  });
+  assert.equal(response.status, 201);
+  const { reader } = await response.json();
+  const entries = await connection.query('SELECT * FROM audit_logs WHERE entity = $1 AND entity_id = $2', ['leitor', reader.id]);
+  assert.equal(entries.rows[0].username, 'biblioteca');
+  assert.equal(entries.rows[0].user_name, 'Maria da Biblioteca');
+  assert.equal(entries.rows[0].user_id, 1);
+  assert.equal(entries.rows[0].action, 'cadastrar');
+  assert.ok(entries.rows[0].created_at);
+  const removed = await fetch(`${baseUrl}/api/readers/${reader.id}/delete`, {
+    method: 'POST', headers, body: JSON.stringify({ password: 'SenhaSegura@123', operatorName: 'Joao da Biblioteca' })
+  });
+  assert.equal(removed.status, 204);
+  const archived = await connection.query('SELECT action, user_name FROM audit_logs WHERE entity = $1 AND entity_id = $2 ORDER BY id', ['leitor', reader.id]);
+  assert.deepEqual(archived.rows.map(row => row.action), ['cadastrar', 'excluir']);
+  assert.equal(archived.rows[1].user_name, 'Joao da Biblioteca');
+  assert.equal((await fetch(`${baseUrl}/api/backup`, { method: 'POST', headers, body: JSON.stringify({ operatorName: 'Maria da Biblioteca' }) })).status, 200);
+  // Promote the test user to exercise the actual authorization boundary.
+  await connection.query("UPDATE app_users SET role = 'Diretor' WHERE id = 1");
+  for (let index = 0; index < 27; index++) {
+    await connection.query("INSERT INTO audit_logs (username, user_name, action, entity, description) VALUES ('test', 'Test', 'editar', 'livro', 'Test')");
+  }
+  const page = await fetch(`${baseUrl}/api/audit?page=1`, { headers });
+  assert.equal(page.status, 200);
+  const first = await page.json();
+  const second = await (await fetch(`${baseUrl}/api/audit?page=2`, { headers })).json();
+  assert.equal(first.entries.length, 25);
+  assert.ok(second.entries.length > 0);
+  assert.ok(!first.entries.some(a => second.entries.some(b => a.id === b.id)));
+  assert.equal((await fetch(`${baseUrl}/api/audit?page=-1`, { headers })).status, 400);
+  const content = JSON.stringify(await library.listAudit());
+  assert.ok(!content.includes('SenhaSegura@123'));
+  const actions = await connection.query('SELECT DISTINCT action FROM audit_logs');
+  for (const action of ['cadastrar', 'editar', 'excluir', 'emprestar', 'devolver', 'renovar', 'reservar', 'backup']) {
+    assert.ok(actions.rows.some(row => row.action === action), action);
+  }
+});
+
+test('audit failure rolls back the operation and failed operations leave no audit', async () => {
+  const before = await connection.query('SELECT COUNT(*)::INTEGER AS total FROM audit_logs');
+  await assert.rejects(() => library.updateReader(999999, { nome: 'Inexistente' }));
+  assert.equal((await connection.query('SELECT COUNT(*)::INTEGER AS total FROM audit_logs')).rows[0].total, before.rows[0].total);
+  await postgres.exec(`CREATE FUNCTION reject_test_audit() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+    BEGIN IF NEW.description = 'Falha Auditoria' THEN RAISE EXCEPTION 'audit unavailable'; END IF; RETURN NEW; END; $$;
+    CREATE TRIGGER reject_test_audit BEFORE INSERT ON audit_logs FOR EACH ROW EXECUTE FUNCTION reject_test_audit();`);
+  try {
+    await assert.rejects(() => library.createReader({ nome: 'Falha Auditoria' }), /audit unavailable/);
+    assert.equal((await connection.query("SELECT COUNT(*)::INTEGER AS total FROM readers WHERE name = 'Falha Auditoria'")).rows[0].total, 0);
+  } finally {
+    await postgres.exec('DROP TRIGGER reject_test_audit ON audit_logs; DROP FUNCTION reject_test_audit();');
+  }
+});

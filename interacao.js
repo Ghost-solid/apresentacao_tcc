@@ -154,7 +154,43 @@ function formatarData(valor) {
   return valor ? lerData(valor).toLocaleDateString('pt-BR') : '—';
 }
 
+function solicitarResponsavelOperacao() {
+  const janela = $('#janelaResponsavel');
+  const formulario = $('#formularioResponsavel');
+  const campo = $('#nomeResponsavelOperacao');
+  if (janela.open) return Promise.reject(new Error('Conclua a confirmação em andamento.'));
+  formulario.reset();
+  campo.setCustomValidity('');
+  return new Promise((resolve, reject) => {
+    let nomeConfirmado = '';
+    const aoEnviar = evento => {
+      evento.preventDefault();
+      const nome = campo.value.trim().replace(/\s+/g, ' ');
+      campo.setCustomValidity(nome.length < 3 ? 'Informe seu nome com pelo menos 3 caracteres.' : '');
+      if (!formulario.reportValidity()) return;
+      nomeConfirmado = nome;
+      janela.close();
+    };
+    const aoDigitar = () => campo.setCustomValidity('');
+    formulario.addEventListener('submit', aoEnviar);
+    campo.addEventListener('input', aoDigitar);
+    janela.addEventListener('close', () => {
+      formulario.removeEventListener('submit', aoEnviar);
+      campo.removeEventListener('input', aoDigitar);
+      if (nomeConfirmado) resolve(nomeConfirmado);
+      else reject(new Error('Operação cancelada. Nenhuma alteração foi enviada.'));
+    }, { once: true });
+    janela.showModal();
+    campo.focus();
+  });
+}
+
 async function requisitarApi(caminho, opcoes = {}) {
+  const metodo = (opcoes.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(metodo) && !caminho.startsWith('/api/auth/')) {
+    const operatorName = await solicitarResponsavelOperacao();
+    opcoes = { ...opcoes, body: JSON.stringify({ ...JSON.parse(opcoes.body || '{}'), operatorName }) };
+  }
   let resposta;
   try {
     resposta = await fetch(caminho, {
@@ -260,6 +296,9 @@ function exibirSistema(usuario) {
 
 function encerrarSessaoVisual() {
   usuarioAtual = null;
+  requisicaoHistoricoAcoes += 1;
+  $('#linhasHistoricoAcoes').innerHTML = '';
+  abrirPagina('painel');
   paginaLeitores = 1;
   paginaBiblioteca = 1;
   leitores = [];
@@ -290,7 +329,7 @@ $('#baixarBackup').addEventListener('click', async () => {
   botao.textContent = 'Preparando backup...';
   estado.textContent = 'Buscando os dados atualizados no servidor...';
   try {
-    const dados = await requisitarApi('/api/state');
+    const dados = await requisitarApi('/api/backup', { method: 'POST' });
     baixarArquivoBackup(dados);
     estado.textContent = 'Download iniciado. Guarde o arquivo para importar na outra instalação.';
   } catch (erro) {
@@ -392,8 +431,44 @@ $('#botaoSair').addEventListener('click', async () => {
   }
 });
 
-const nomesPaginas = { painel: 'Painel', leitores: 'Leitores', biblioteca: 'Estoque', emprestimos: 'Empréstimos', reservas: 'Reservas', relatorios: 'Relatórios', backup: 'Backup' };
+let paginaAcoes = 1;
+let requisicaoHistoricoAcoes = 0;
+async function carregarHistoricoAcoes(pagina = 1) {
+  const requisicao = ++requisicaoHistoricoAcoes;
+  const estado = $('#estadoHistoricoAcoes');
+  const anterior = $('#anteriorHistoricoAcoes');
+  const proxima = $('#proximaHistoricoAcoes');
+  anterior.disabled = true;
+  proxima.disabled = true;
+  estado.textContent = 'Carregando...';
+  $('#linhasHistoricoAcoes').innerHTML = '';
+  $('#paginaHistoricoAcoes').textContent = '';
+  const acoes = { cadastrar: 'Cadastro', editar: 'Edição', excluir: 'Exclusão', emprestar: 'Empréstimo', devolver: 'Devolução', renovar: 'Renovação', reservar: 'Reserva', cancelar: 'Cancelamento', importar: 'Importação', backup: 'Backup' };
+  try {
+    const dados = await requisitarApi(`/api/audit?page=${pagina}`);
+    if (requisicao !== requisicaoHistoricoAcoes || usuarioAtual?.perfil !== 'Diretor') return;
+    paginaAcoes = dados.page;
+    $('#linhasHistoricoAcoes').innerHTML = dados.entries.map(item => `<tr><td>${escaparHtml(new Date(item.createdAt).toLocaleString('pt-BR'))}</td><td>${escaparHtml(item.userName)} (${escaparHtml(item.username)})</td><td>${escaparHtml(acoes[item.action] || item.action)}</td><td>${escaparHtml(item.entity)} ${escaparHtml(item.entityId || '')}</td><td>${escaparHtml(item.description)}</td></tr>`).join('');
+    estado.textContent = dados.total ? `${dados.total} ações registradas.` : 'Nenhuma ação registrada ainda.';
+    $('#paginaHistoricoAcoes').textContent = `Página ${dados.page} de ${dados.pages}`;
+    anterior.disabled = dados.page <= 1;
+    proxima.disabled = dados.page >= dados.pages;
+  } catch (erro) {
+    if (requisicao !== requisicaoHistoricoAcoes) return;
+    estado.textContent = erro.message;
+    tratarErroOperacao(erro);
+  }
+}
+$('#atualizarHistoricoAcoes').addEventListener('click', () => carregarHistoricoAcoes(1));
+$('#anteriorHistoricoAcoes').addEventListener('click', () => carregarHistoricoAcoes(paginaAcoes - 1));
+$('#proximaHistoricoAcoes').addEventListener('click', () => carregarHistoricoAcoes(paginaAcoes + 1));
+
+const nomesPaginas = { painel: 'Painel', leitores: 'Leitores', biblioteca: 'Estoque', emprestimos: 'Empréstimos', reservas: 'Reservas', relatorios: 'Relatórios', backup: 'Backup', historicoAcoes: 'Histórico de ações' };
 function abrirPagina(pagina) {
+  if (pagina === 'historicoAcoes') {
+    if (usuarioAtual?.perfil !== 'Diretor') return;
+    carregarHistoricoAcoes(1);
+  }
   $$('.pagina').forEach(item => item.classList.remove('ativo'));
   $$('.item-navegacao').forEach(item => item.classList.toggle('ativo', item.dataset.pagina === pagina));
   $(`#${pagina}`).classList.add('ativo');

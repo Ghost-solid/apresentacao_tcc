@@ -177,22 +177,44 @@ app.post('/api/auth/verify-password', requireAuth, requireSameOrigin, asyncRoute
 
 app.use('/api', requireAuth, requireSameOrigin);
 
+app.use('/api', (request, response, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) return next();
+  const value = request.body?.operatorName;
+  const operatorName = typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
+  if (operatorName.length < 3 || operatorName.length > 160) {
+    return response.status(400).json({ message: 'Informe o nome de quem esta realizando a operacao (3 a 160 caracteres).', code: 'OPERATOR_REQUIRED' });
+  }
+  request.user = { ...request.user, operatorName };
+  next();
+});
+
+app.get('/api/audit', asyncRoute(async (request, response) => {
+  if (request.user.role !== 'Diretor') return response.status(403).json({ message: 'Somente a direcao pode consultar o historico de acoes.' });
+  response.set('Cache-Control', 'no-store');
+  response.json(await library.listAudit(request.query.page || 1));
+}));
+
+app.post('/api/backup', asyncRoute(async (request, response) => {
+  response.set('Cache-Control', 'no-store');
+  response.json(await library.exportBackup(request.user));
+}));
+
 app.get('/api/state', asyncRoute(async (_request, response) => {
   response.json(await library.loadState());
 }));
 
 app.post('/api/migrate-local', asyncRoute(async (request, response) => {
-  const result = await library.importLocalState(request.body || {});
+  const result = await library.importLocalState(request.body || {}, request.user);
   response.json({ ...result, state: await library.loadState() });
 }));
 
 app.post('/api/readers', asyncRoute(async (request, response) => {
-  const reader = await library.createReader(request.body);
+  const reader = await library.createReader(request.body, request.user);
   response.status(201).json({ reader });
 }));
 
 app.put('/api/readers/:id', asyncRoute(async (request, response) => {
-  const reader = await library.updateReader(request.params.id, request.body);
+  const reader = await library.updateReader(request.params.id, request.body, request.user);
   response.json({ reader });
 }));
 
@@ -200,17 +222,17 @@ app.post('/api/readers/:id/delete', asyncRoute(async (request, response) => {
   const { rows } = await pool.query('SELECT password_hash FROM app_users WHERE id = $1 AND active = TRUE', [request.user.id]);
   const valid = rows[0] && await bcrypt.compare(String(request.body?.password ?? ''), rows[0].password_hash);
   if (!valid) return response.status(401).json({ message: 'Senha incorreta. Digite a senha da conta que está conectada.' });
-  await library.deleteReader(request.params.id);
+  await library.deleteReader(request.params.id, request.user);
   response.status(204).end();
 }));
 
 app.post('/api/books', asyncRoute(async (request, response) => {
-  const book = await library.createBook(request.body);
+  const book = await library.createBook(request.body, request.user);
   response.status(201).json({ book });
 }));
 
 app.put('/api/books/:id', asyncRoute(async (request, response) => {
-  const book = await library.updateBook(request.params.id, request.body);
+  const book = await library.updateBook(request.params.id, request.body, request.user);
   response.json({ book });
 }));
 
@@ -218,7 +240,7 @@ app.post('/api/books/:id/delete', asyncRoute(async (request, response) => {
   const { rows } = await pool.query('SELECT password_hash FROM app_users WHERE id = $1 AND active = TRUE', [request.user.id]);
   const valid = rows[0] && await bcrypt.compare(String(request.body?.password ?? ''), rows[0].password_hash);
   if (!valid) return response.status(401).json({ message: 'Senha incorreta. Digite a senha da conta que está conectada.' });
-  await library.deleteBook(request.params.id);
+  await library.deleteBook(request.params.id, request.user);
   response.status(204).end();
 }));
 
@@ -228,7 +250,7 @@ app.post('/api/loans', asyncRoute(async (request, response) => {
 }));
 
 app.post('/api/loans/:id/return', asyncRoute(async (request, response) => {
-  const loan = await library.returnLoan(request.params.id, request.body);
+  const loan = await library.returnLoan(request.params.id, request.body, request.user);
   response.json({ loan });
 }));
 
@@ -238,12 +260,12 @@ app.post('/api/loans/:id/renew', asyncRoute(async (request, response) => {
 }));
 
 app.post('/api/reservations', asyncRoute(async (request, response) => {
-  const reservation = await library.createReservation(request.body);
+  const reservation = await library.createReservation(request.body, request.user);
   response.status(201).json({ reservation });
 }));
 
 app.post('/api/reservations/:id/cancel', asyncRoute(async (request, response) => {
-  const reservation = await library.cancelReservation(request.params.id);
+  const reservation = await library.cancelReservation(request.params.id, request.user);
   response.json({ reservation });
 }));
 

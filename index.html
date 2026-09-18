@@ -67,6 +67,7 @@
         <button class="item-navegacao" data-pagina="reservas"><span class="icone-navegacao" aria-hidden="true">◷</span><span>Reservas</span></button>
         <button class="item-navegacao somente-diretor" data-pagina="relatorios"><span class="icone-navegacao" aria-hidden="true">▤</span><span>Relatórios</span></button>
         <button class="item-navegacao" data-pagina="backup"><span class="icone-navegacao" aria-hidden="true">↓</span><span>Backup</span></button>
+        <button class="item-navegacao somente-diretor" data-pagina="historicoAcoes"><span class="icone-navegacao" aria-hidden="true">◷</span><span>Histórico de ações</span></button>
       </nav>
       <div class="usuario-logado"><div class="circulo-usuario" id="inicialUsuario">U</div><div><strong id="nomeUsuario">Usuário</strong><span id="perfilUsuario">Perfil</span></div></div>
       <button class="sair" id="botaoSair">↪ Sair</button>
@@ -125,6 +126,11 @@
           <h3>Usar em outro lugar</h3>
           <p>Na tela de login da outra instalação, clique em <strong>Selecionar backup</strong>, escolha o arquivo baixado e entre com uma conta dessa instalação. O banco de destino precisa estar vazio; os dados existentes não serão substituídos.</p>
         </div>
+      </section>
+      <section class="pagina" id="historicoAcoes">
+        <div class="acoes-pagina"><div><h2>Histórico de ações</h2><p>Operações registradas a partir da ativação deste recurso. Horários exibidos no fuso deste computador.</p></div><button type="button" class="botao-principal" id="atualizarHistoricoAcoes">Atualizar</button></div>
+        <div class="caixa"><p id="estadoHistoricoAcoes" role="status"></p><div class="rolagem-tabela"><table><thead><tr><th>Data e hora</th><th>Responsável</th><th>Ação</th><th>Registro</th><th>Detalhes</th></tr></thead><tbody id="linhasHistoricoAcoes"></tbody></table></div>
+        <nav class="paginacao-leitores" aria-label="Paginas do historico"><button type="button" class="botao-pequeno" id="anteriorHistoricoAcoes" disabled>Anterior</button><span id="paginaHistoricoAcoes"></span><button type="button" class="botao-pequeno" id="proximaHistoricoAcoes" disabled>Próxima</button></nav></div>
       </section>
     </main>
   </div>
@@ -296,6 +302,16 @@
       <input id="senhaExclusao" type="password" autocomplete="current-password" required placeholder="Digite sua senha para confirmar">
       <p class="erro-exclusao" id="erroExclusao" role="alert"></p>
       <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button value="default" class="botao-principal botao-perigo" id="confirmarExclusao">Ocultar cadastro</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="janelaResponsavel">
+    <form id="formularioResponsavel">
+      <div class="titulo-modal"><h2>Quem está realizando esta operação?</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
+      <p>Informe seu nome para registrar a operação no histórico.</p>
+      <label for="nomeResponsavelOperacao">Seu nome</label>
+      <input id="nomeResponsavelOperacao" type="text" required minlength="3" maxlength="160" autocomplete="off" placeholder="Digite seu nome" autofocus>
+      <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button type="submit" class="botao-principal">Confirmar operação</button></div>
     </form>
   </dialog>
 
