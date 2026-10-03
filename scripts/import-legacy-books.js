@@ -370,10 +370,12 @@ async function importBooks(client, books, { source, apply }) {
 function parseArguments(argumentsList) {
   const apply = argumentsList.includes('--apply');
   const sourceArgument = argumentsList.find(value => value.startsWith('--source='));
-  const filename = argumentsList.find(value => !value.startsWith('--')) || 'aliceplinio.sql';
+  const sourceFile = argumentsList.find(value => !value.startsWith('--'));
   return {
     apply,
-    filename: path.resolve(process.cwd(), filename),
+    filename: sourceFile
+      ? path.resolve(process.cwd(), sourceFile)
+      : path.resolve(__dirname, '..', 'database', 'legacy', 'aliceplinio.sql'),
     source: cleanText(sourceArgument?.slice('--source='.length) || 'aliceplinio', 120)
   };
 }

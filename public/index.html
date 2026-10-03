@@ -6,12 +6,26 @@
   <meta name="description" content="DS Legacy - sistema de gestão da biblioteca escolar.">
   <title>DS Legacy | Biblioteca Escolar</title>
   <link rel="icon" type="image/jpeg" href="/images/favicon_projeto.jpeg?v=20260831-1">
-  <link rel="stylesheet" href="/estilo.css?v=20260831-1">
-  <link rel="stylesheet" href="/biblioteca.css?v=20260831-1">
-  <link rel="stylesheet" href="/apresentacao.css?v=20260831-1">
+  <link rel="stylesheet" href="/css/estilo.css?v=20260831-1">
+  <link rel="stylesheet" href="/css/biblioteca.css?v=20260831-1">
+  <link rel="stylesheet" href="/css/apresentacao.css?v=20260831-1">
+  <script>
+    (() => {
+      try {
+        const temaSalvo = localStorage.getItem('ds_theme');
+        const tema = temaSalvo === 'dark' || temaSalvo === 'light'
+          ? temaSalvo
+          : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = tema;
+      } catch {}
+    })();
+  </script>
 </head>
 <body>
   <section class="pagina-login" id="paginaLogin">
+    <button class="controle-tema controle-tema-login" type="button" data-theme-toggle aria-pressed="false">
+      <span class="icone-tema" aria-hidden="true">☾</span><span data-theme-label>Modo escuro</span>
+    </button>
     <div class="informacoes-login">
       <div class="biblioteca-animada" aria-hidden="true">
         <span class="livro-flutuante livro-flutuante-um"></span>
@@ -74,7 +88,7 @@
     </aside>
 
     <main class="conteudo-principal">
-      <header class="barra-superior"><button class="menu-celular" id="menuCelular" aria-label="Abrir menu">☰</button><div class="contexto-pagina"><span>DS LEGACY • ESTOQUE ESCOLAR</span><h1 id="tituloPagina">Painel</h1><p id="textoHoje"></p></div><button class="botao-notificacao" id="botaoNotificacao" aria-label="Notificações">♢ <span id="quantidadeNotificacoes">0</span></button></header>
+      <header class="barra-superior"><button class="menu-celular" id="menuCelular" aria-label="Abrir menu">☰</button><div class="contexto-pagina"><span>DS LEGACY • ESTOQUE ESCOLAR</span><h1 id="tituloPagina">Painel</h1><p id="textoHoje"></p></div><div class="acoes-cabecalho"><button class="controle-tema" type="button" data-theme-toggle aria-pressed="false"><span class="icone-tema" aria-hidden="true">☾</span><span data-theme-label>Modo escuro</span></button><button class="botao-notificacao" id="botaoNotificacao" aria-label="Notificações">♢ <span id="quantidadeNotificacoes">0</span></button></div></header>
 
       <section class="pagina ativo" id="painel">
         <div class="cartao-boas-vindas"><div class="texto-boas-vindas"><span>GESTÃO DA BIBLIOTECA</span><h2>Bem-vindo ao DS Legacy</h2><p>Organize o estoque, acompanhe leitores e mantenha o conhecimento sempre em circulação.</p></div><div class="ilustracao-biblioteca" aria-hidden="true"><i></i><i></i><i></i><b></b></div><button class="botao-branco abrir-emprestimo">+ Novo empréstimo</button></div>
@@ -316,6 +330,6 @@
   </dialog>
 
   <div class="aviso-flutuante" id="aviso-flutuante" role="status"></div>
-  <script src="/interacao.js?v=20260831-1"></script>
+  <script src="/js/interacao.js?v=20260831-1"></script>
 </body>
 </html>

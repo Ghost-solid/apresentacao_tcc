@@ -33,6 +33,14 @@ test('servidor entrega a interface com cabeçalhos de segurança', async () => {
   assert.match(response.headers.get('content-security-policy') || '', /default-src 'self'/);
   assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
   assert.match(await response.text(), /DS Legacy/);
+
+  const stylesheet = await fetch(`${baseUrl}/css/apresentacao.css`);
+  assert.equal(stylesheet.status, 200);
+  assert.match(stylesheet.headers.get('content-type') || '', /text\/css/);
+
+  const script = await fetch(`${baseUrl}/js/interacao.js`);
+  assert.equal(script.status, 200);
+  assert.match(script.headers.get('content-type') || '', /javascript/);
 });
 
 test('arquivos internos do servidor não ficam públicos', async () => {
@@ -41,14 +49,14 @@ test('arquivos internos do servidor não ficam públicos', async () => {
 });
 
 test('interface usa a API e mantém localStorage apenas para marcar a migração', () => {
-  const source = fs.readFileSync(path.join(__dirname, '..', 'interacao.js'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'interacao.js'), 'utf8');
   assert.match(source, /requisitarApi\('\/api\/state'/);
   assert.doesNotMatch(source, /localStorage\.setItem\('ds_(readers|library|loans|reservations)'/);
 });
 
 test('formulários usam seletores pesquisáveis únicos e podem ser cancelados vazios', () => {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  const source = fs.readFileSync(path.join(__dirname, '..', 'interacao.js'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'interacao.js'), 'utf8');
   for (const id of ['leitorEmprestimo', 'livroEmprestimo', 'livroReserva', 'leitorReserva']) {
     assert.match(html, new RegExp(`<input id="${id}"[^>]+list="[^"]+"`));
     assert.doesNotMatch(html, new RegExp(`<select id="${id}"`));
@@ -62,8 +70,8 @@ test('formulários usam seletores pesquisáveis únicos e podem ser cancelados v
 });
 
 test('Estoque permite escolher cada campo da pesquisa', () => {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  const source = fs.readFileSync(path.join(__dirname, '..', 'interacao.js'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'interacao.js'), 'utf8');
   assert.match(html, /<select id="campoPesquisaBiblioteca"/);
   for (const campo of ['todos', 'id', 'titulo', 'autor', 'editora', 'categoria', 'isbn', 'ano', 'local', 'total', 'disponiveis', 'perdidos', 'estado']) {
     assert.match(html, new RegExp(`<option value="${campo}">`));
@@ -73,14 +81,24 @@ test('Estoque permite escolher cada campo da pesquisa', () => {
 });
 
 test('login tem animações temáticas com alternativa de movimento reduzido', () => {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  const styles = fs.readFileSync(path.join(__dirname, '..', 'apresentacao.css'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const styles = fs.readFileSync(path.join(__dirname, '..', 'public', 'css', 'apresentacao.css'), 'utf8');
   assert.match(html, /class="biblioteca-animada" aria-hidden="true"/);
   assert.match(styles, /@keyframes flutuar-livro-um/);
   assert.match(styles, /@keyframes revelar-cartao-login/);
   assert.match(styles, /@keyframes respirar-logo-login/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(styles, /animation-duration: 0\.01ms !important/);
+});
+
+test('interface permite alternar entre modo claro e escuro', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'interacao.js'), 'utf8');
+  const styles = fs.readFileSync(path.join(__dirname, '..', 'public', 'css', 'apresentacao.css'), 'utf8');
+  assert.match(html, /data-theme-toggle/);
+  assert.match(source, /const chaveTema = 'ds_theme'/);
+  assert.match(source, /localStorage\.setItem\(chaveTema, proximoTema\)/);
+  assert.match(styles, /:root\[data-theme="dark"\]/);
 });
 
 test('esquema PostgreSQL é executável e cria todas as entidades centrais', async () => {

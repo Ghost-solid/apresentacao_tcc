@@ -39,6 +39,40 @@ let exclusaoPendente = null;
 const $ = seletor => document.querySelector(seletor);
 const $$ = seletor => document.querySelectorAll(seletor);
 
+const chaveTema = 'ds_theme';
+
+function aplicarTema(tema) {
+  const temaValido = tema === 'dark' ? 'dark' : 'light';
+  const modoEscuro = temaValido === 'dark';
+  document.documentElement.dataset.theme = temaValido;
+  $$('[data-theme-toggle]').forEach(botao => {
+    botao.setAttribute('aria-pressed', String(modoEscuro));
+    botao.setAttribute('aria-label', modoEscuro ? 'Ativar modo claro' : 'Ativar modo escuro');
+    botao.querySelector('.icone-tema').textContent = modoEscuro ? '☀' : '☾';
+    botao.querySelector('[data-theme-label]').textContent = modoEscuro ? 'Modo claro' : 'Modo escuro';
+  });
+}
+
+function iniciarTema() {
+  let temaSalvo = null;
+  try {
+    temaSalvo = localStorage.getItem(chaveTema);
+  } catch {}
+  const temaInicial = temaSalvo === 'dark' || temaSalvo === 'light'
+    ? temaSalvo
+    : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  aplicarTema(temaInicial);
+  $$('[data-theme-toggle]').forEach(botao => botao.addEventListener('click', () => {
+    const proximoTema = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    try {
+      localStorage.setItem(chaveTema, proximoTema);
+    } catch {}
+    aplicarTema(proximoTema);
+  }));
+}
+
+iniciarTema();
+
 $$('[data-fechar-dialog]').forEach(botao => {
   botao.addEventListener('click', () => botao.closest('dialog')?.close());
 });

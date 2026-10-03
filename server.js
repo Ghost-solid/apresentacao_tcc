@@ -10,6 +10,7 @@ const library = require('./src/library-service');
 
 const app = express();
 const root = __dirname;
+const publicDirectory = path.join(root, 'public');
 const production = process.env.NODE_ENV === 'production';
 const sessionHours = Math.max(1, Math.min(Number(process.env.SESSION_HOURS || 8), 72));
 const cookieName = 'ds_legacy_session';
@@ -276,15 +277,21 @@ app.use('/api', (_request, response) => {
 function sendFrontendFile(filename) {
   return (_request, response) => {
     response.set('Cache-Control', 'no-cache');
-    response.sendFile(path.join(root, filename));
+    response.sendFile(path.join(publicDirectory, filename));
   };
 }
 
 app.get(['/', '/index.html'], sendFrontendFile('index.html'));
-app.get('/interacao.js', sendFrontendFile('interacao.js'));
-app.get('/estilo.css', sendFrontendFile('estilo.css'));
-app.get('/biblioteca.css', sendFrontendFile('biblioteca.css'));
-app.get('/apresentacao.css', sendFrontendFile('apresentacao.css'));
+app.use('/css', express.static(path.join(publicDirectory, 'css'), {
+  index: false,
+  dotfiles: 'deny',
+  maxAge: production ? '7d' : 0
+}));
+app.use('/js', express.static(path.join(publicDirectory, 'js'), {
+  index: false,
+  dotfiles: 'deny',
+  maxAge: production ? '7d' : 0
+}));
 app.use('/fonts/inter', express.static(path.join(root, 'node_modules', '@fontsource', 'inter', 'files'), {
   index: false,
   dotfiles: 'deny',
@@ -295,7 +302,7 @@ app.use('/fonts/lato', express.static(path.join(root, 'node_modules', '@fontsour
   dotfiles: 'deny',
   maxAge: production ? '30d' : 0
 }));
-app.use('/images', express.static(path.join(root, 'images'), {
+app.use('/images', express.static(path.join(publicDirectory, 'images'), {
   index: false,
   dotfiles: 'deny',
   maxAge: production ? '7d' : 0

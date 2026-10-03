@@ -52,6 +52,28 @@
   --sombra-elevada: 0 20px 50px rgba(23, 42, 52, 0.14);
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --azul: #76b8e4;
+  --azul-escuro: #193b52;
+  --azul-profundo: #0d1d28;
+  --azul-claro: #203f52;
+  --papel: #17242b;
+  --papel-suave: #1d2c34;
+  --creme: #2b3940;
+  --dourado: #e0ae62;
+  --dourado-claro: #3d3120;
+  --verde: #76b994;
+  --terracota: #dc8a73;
+  --fundo: #101a20;
+  --texto: #e8f0f2;
+  --cinza: #b5c3c8;
+  --borda: #3a4c54;
+  --vermelho: #ed7c7c;
+  --sombra: 0 12px 35px rgba(0, 0, 0, 0.28);
+  --sombra-elevada: 0 20px 50px rgba(0, 0, 0, 0.42);
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -97,6 +119,44 @@ select:focus-visible,
 textarea:focus-visible {
   outline: 3px solid rgba(195, 138, 59, 0.24);
   outline-offset: 2px;
+}
+
+.acoes-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.controle-tema {
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: var(--papel);
+  color: var(--texto);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.controle-tema:hover:not(:disabled) {
+  border-color: var(--dourado);
+  background: var(--dourado-claro);
+}
+
+.icone-tema {
+  color: var(--dourado);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.controle-tema-login {
+  position: absolute;
+  z-index: 3;
+  top: 18px;
+  right: 18px;
+  background: rgba(255, 253, 248, 0.92);
 }
 
 /* Entrada */
@@ -1379,6 +1439,74 @@ dialog::backdrop {
     animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+:root[data-theme="dark"] body {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(224, 174, 98, 0.12), transparent 24rem),
+    linear-gradient(135deg, #101a20 0%, var(--fundo) 55%, #14242a 100%);
+}
+
+:root[data-theme="dark"] .cartao-login,
+:root[data-theme="dark"] .barra-lateral,
+:root[data-theme="dark"] .barra-superior,
+:root[data-theme="dark"] .cartoes article,
+:root[data-theme="dark"] .cartoes-biblioteca article,
+:root[data-theme="dark"] .caixa,
+:root[data-theme="dark"] dialog,
+:root[data-theme="dark"] .botao-notificacao,
+:root[data-theme="dark"] .botao-pequeno,
+:root[data-theme="dark"] .botao-cancelar {
+  background: var(--papel);
+  color: var(--texto);
+  border-color: var(--borda);
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] .ferramentas-biblioteca select,
+:root[data-theme="dark"] .ferramentas-leitores select,
+:root[data-theme="dark"] .ferramentas-biblioteca .pesquisa,
+:root[data-theme="dark"] .ferramentas-leitores .pesquisa {
+  background: #122027;
+  color: var(--texto);
+  border-color: var(--borda);
+}
+
+:root[data-theme="dark"] .caixa-senha,
+:root[data-theme="dark"] .usuario-logado,
+:root[data-theme="dark"] td,
+:root[data-theme="dark"] .linha-aluno,
+:root[data-theme="dark"] .linha-recente {
+  border-color: var(--borda);
+}
+
+:root[data-theme="dark"] th {
+  background: #22333b;
+  color: var(--cinza);
+}
+
+:root[data-theme="dark"] .contas-teste,
+:root[data-theme="dark"] .vazio,
+:root[data-theme="dark"] .paginacao-biblioteca,
+:root[data-theme="dark"] .paginacao-leitores {
+  background: var(--papel-suave);
+  color: var(--cinza);
+}
+
+:root[data-theme="dark"] .controle-tema-login {
+  background: rgba(23, 36, 43, 0.94);
+}
+
+@media (max-width: 560px) {
+  .acoes-cabecalho .controle-tema [data-theme-label] {
+    display: none;
+  }
+
+  .acoes-cabecalho .controle-tema {
+    padding: 9px;
   }
 }
 

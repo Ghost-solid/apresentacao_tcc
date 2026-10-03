@@ -196,14 +196,14 @@ Se o protótipo era aberto diretamente como arquivo ou em outro endereço:
 4. Clique em **Selecionar backup** e escolha o JSON exportado.
 5. Entre com uma conta; o backup será importado se o banco ainda estiver vazio.
 
-Os valores antigos não são apagados automaticamente, servindo como cópia temporária até a migração ser conferida. O arquivo `aliceplinio.sql` é uma fonte histórica MySQL usada somente pelo importador administrativo; a aplicação continua operando exclusivamente no PostgreSQL.
+Os valores antigos não são apagados automaticamente, servindo como cópia temporária até a migração ser conferida. O arquivo `database/legacy/aliceplinio.sql` é uma fonte histórica MySQL usada somente pelo importador administrativo; a aplicação continua operando exclusivamente no PostgreSQL.
 
 ### Importação do acervo MySQL legado
 
-O comando `import:legacy` lê autores, editoras, classificações e livros de `aliceplinio.sql`. Por padrão ele executa uma simulação transacional e não grava alterações. No PowerShell, com os contêineres ativos:
+O comando `import:legacy` lê autores, editoras, classificações e livros de `database/legacy/aliceplinio.sql`. Por padrão ele executa uma simulação transacional e não grava alterações. No PowerShell, com os contêineres ativos:
 
 ```powershell
-$arquivoLegado = (Resolve-Path .\aliceplinio.sql).Path
+$arquivoLegado = (Resolve-Path .\database\legacy\aliceplinio.sql).Path
 docker compose --env-file .env.docker run --rm --volume "${arquivoLegado}:/imports/aliceplinio.sql:ro" app npm run import:legacy -- /imports/aliceplinio.sql
 ```
 
@@ -266,19 +266,20 @@ powershell -ExecutionPolicy Bypass -File scripts/backup-docker.ps1
 ## Estrutura do projeto
 
 ```text
-Apresentacao_tcc/
-├── database/schema.sql       # Esquema PostgreSQL
-├── docs/IMPLANTACAO_PC_TRABALHO.md # Guia do servidor Windows
-├── scripts/backup-docker.ps1 # Backup do PostgreSQL em Docker
-├── scripts/init-db.js        # Inicialização do banco e das contas
-├── src/database.js           # Pool de conexão e transações
-├── src/library-service.js    # Regras de negócio no servidor
-├── server.js                 # API, autenticação e arquivos da interface
-├── index.html                # Estrutura da interface
-├── interacao.js              # Interações e consumo da API
-├── estilo.css                # Estilos gerais
-├── apresentacao.css          # Identidade visual
-├── biblioteca.css            # Estilos do acervo
+apresentacao_tcc/
+├── database/
+│   ├── legacy/aliceplinio.sql # Fonte MySQL para importação opcional
+│   └── schema.sql             # Esquema PostgreSQL
+├── docs/                      # Guias de implantação e backup
+├── public/                    # Arquivos entregues ao navegador
+│   ├── css/                   # Estilos da interface
+│   ├── images/                # Logo e ícone
+│   ├── js/interacao.js        # Interações e consumo da API
+│   └── index.html             # Estrutura da interface
+├── scripts/                   # Rotinas de banco, backup e importação
+├── src/                       # Banco de dados e regras de negócio
+├── test/                      # Testes automatizados
+├── server.js                  # API, autenticação e entrega da interface
 ├── Dockerfile                # Imagem da aplicação
 ├── compose.yaml              # Aplicação e PostgreSQL local
 ├── .env.example              # Modelo de configuração
