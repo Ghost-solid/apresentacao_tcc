@@ -114,7 +114,7 @@ async function recordAudit(client, user, action, entity, entityId, description) 
   await client.query(
     `INSERT INTO audit_logs (user_id, username, user_name, action, entity, entity_id, description)
      VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [user?.id || null, user?.username || 'sistema', user?.operatorName || user?.name || 'Sistema', action, entity, entityId, description]
+    [user?.id || null, user?.username || 'sistema', user?.name || 'Sistema', action, entity, entityId, description]
   );
 }
 
@@ -363,7 +363,7 @@ async function createLoan(body, user) {
        RETURNING id::TEXT, reader_id::TEXT, book_id::TEXT, loan_date::TEXT, due_date::TEXT,
                  return_date::TEXT, penalty_until::TEXT, responsible, return_condition,
                  return_note, warning, book_lost, status, renewals`,
-      [readerId, bookId, loanDate, dueDate, user.operatorName || user.name]
+      [readerId, bookId, loanDate, dueDate, user?.name || 'Sistema']
     );
     await client.query('UPDATE books SET available = available - 1, updated_at = NOW() WHERE id = $1', [bookId]);
     if (queue.rowCount) {
@@ -465,7 +465,7 @@ async function renewLoan(idValue, body, user) {
     );
     if (reservation.rowCount) throw new AppError(409, 'Este livro possui uma reserva ativa e não pode ser renovado.');
     const renewals = Array.isArray(loan.renewals) ? loan.renewals : [];
-    renewals.push({ previousDueDate: loan.due_date, newDueDate, date: today, responsible: user.operatorName || user.name });
+    renewals.push({ previousDueDate: loan.due_date, newDueDate, date: today, responsible: user?.name || 'Sistema' });
     const { rows } = await client.query(
       `UPDATE loans SET due_date = $2, renewals = $3::JSONB, updated_at = NOW()
        WHERE id = $1

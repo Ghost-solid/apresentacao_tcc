@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="DS Legacy - sistema de gestão da biblioteca escolar.">
   <title>DS Legacy | Biblioteca Escolar</title>
-  <link rel="icon" type="image/jpeg" href="/images/favicon_projeto.jpeg?v=20260831-1">
-  <link rel="stylesheet" href="/css/estilo.css?v=20260831-1">
-  <link rel="stylesheet" href="/css/biblioteca.css?v=20260831-1">
-  <link rel="stylesheet" href="/css/apresentacao.css?v=20260831-1">
+  <link rel="icon" type="image/jpeg" href="/images/favicon_projeto.jpeg?v=20261006-1">
+  <link rel="stylesheet" href="/css/estilo.css?v=20261006-1">
+  <link rel="stylesheet" href="/css/biblioteca.css?v=20261006-1">
+  <link rel="stylesheet" href="/css/apresentacao.css?v=20261006-1">
   <script>
     (() => {
       try {
@@ -36,7 +36,7 @@
       </div>
       <div class="conteudo-login-institucional">
         <span class="selo-login">Biblioteca escolar inteligente</span>
-        <img src="/images/1000043352.jpg?v=20260831-1" alt="Logo DS Legacy">
+        <img src="/images/1000043352.jpg?v=20261006-1" alt="Logo DS Legacy">
         <span class="chamada-login">CONHECIMENTO QUE CIRCULA</span>
         <h1>DS Legacy</h1>
         <p>Uma biblioteca viva, organizada e próxima de toda a comunidade escolar.</p>
@@ -50,12 +50,13 @@
     <form class="cartao-login" id="formularioLogin">
       <h2>Entrar no sistema</h2>
       <p>Utilize uma conta autorizada pela escola.</p>
-      <label for="usuario">Usuário</label>
+      <label for="usuario">E-mail ou usuário</label>
       <input id="usuario" name="usuario" type="text" autocomplete="username" required>
       <label for="senha">Senha</label>
       <div class="caixa-senha"><input id="senha" name="senha" type="password" autocomplete="current-password" required><button type="button" id="mostrarSenha" aria-label="Mostrar senha">👁</button></div>
       <p class="erro-login" id="erroLogin" role="alert"></p>
       <button class="botao-principal" type="submit">Acessar</button>
+      <button class="botao-cadastro" id="abrirCadastroConta" type="button">Criar uma conta</button>
       <div class="contas-teste"><strong>Acesso protegido pelo servidor</strong><span>Use as credenciais fornecidas pela administração da biblioteca.</span><span>Os acessos iniciais podem ser configurados no arquivo <code>.env</code>.</span></div>
       <div class="contas-teste oculto" id="acessoDemonstracao"><strong>Modo de demonstração</strong><span>Usuário: <code>biblioteca</code></span><span>Senha: <code>Biblioteca@123</code></span></div>
       <div class="migracao-login">
@@ -70,9 +71,27 @@
     </form>
   </section>
 
+  <dialog id="janelaCadastroConta">
+    <form method="dialog" id="formularioCadastroConta">
+      <div class="titulo-modal"><h2>Criar conta</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
+      <p class="texto-ajuda-cadastro">A nova conta terá acesso de Biblioteca. Funções de Diretoria continuam restritas.</p>
+      <label for="nomeCadastroConta">Nome completo</label>
+      <input id="nomeCadastroConta" type="text" autocomplete="name" minlength="3" maxlength="160" placeholder="Ex.: Maria José da Silva" required>
+      <label for="emailCadastroConta">E-mail</label>
+      <input id="emailCadastroConta" type="email" autocomplete="email" maxlength="80" placeholder="nome@escola.com" required>
+      <label for="senhaCadastroConta">Senha</label>
+      <input id="senhaCadastroConta" type="password" autocomplete="new-password" minlength="8" maxlength="200" placeholder="Mínimo 8 caracteres" required>
+      <p class="texto-ajuda-cadastro">Use ao menos uma letra maiúscula, uma minúscula e um número.</p>
+      <label for="confirmacaoSenhaCadastroConta">Confirmar senha</label>
+      <input id="confirmacaoSenhaCadastroConta" type="password" autocomplete="new-password" minlength="8" maxlength="200" required>
+      <p class="erro-login" id="erroCadastroConta" role="alert"></p>
+      <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button type="submit" class="botao-principal" id="salvarCadastroConta">Criar e entrar</button></div>
+    </form>
+  </dialog>
+
   <div class="sistema oculto" id="sistema">
     <aside class="barra-lateral" id="barra-lateral">
-      <div class="marca"><img src="/images/1000043352.jpg?v=20260831-1" alt="Logo DS Legacy"><span class="marca-texto"><b>DS Legacy</b><small>Biblioteca escolar</small></span></div>
+      <div class="marca"><img src="/images/1000043352.jpg?v=20261006-1" alt="Logo DS Legacy"><span class="marca-texto"><b>DS Legacy</b><small>Biblioteca escolar</small></span></div>
       <nav aria-label="Navegação principal">
         <button class="item-navegacao ativo" data-pagina="painel"><span class="icone-navegacao" aria-hidden="true">⌂</span><span>Painel</span></button>
         <button class="item-navegacao" data-pagina="leitores"><span class="icone-navegacao" aria-hidden="true">♙</span><span>Leitores</span></button>
@@ -152,20 +171,12 @@
   <dialog id="janelaLeitor">
     <form method="dialog" id="formularioLeitor">
       <div class="titulo-modal"><h2 id="tituloFormularioLeitor">Cadastrar leitor</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
-      <p class="explicacao-cadastro" id="explicacaoFormularioLeitor">Preencha somente os dados que desejar. O ID numérico é criado automaticamente e permanece fixo.</p>
+      <p class="explicacao-cadastro" id="explicacaoFormularioLeitor">Preencha somente os dados que desejar.</p>
       <label for="nomeLeitor">Nome completo</label>
       <input id="nomeLeitor" type="text" inputmode="text" autocomplete="name" placeholder="Ex.: Maria José da Silva">
-      <div class="grade-formulario">
-        <div>
-          <label for="matriculaLeitor">ID do leitor</label>
-          <input class="campo-automatico" id="matriculaLeitor" readonly placeholder="Gerado ao salvar" aria-label="ID numérico e permanente do leitor, gerado automaticamente ao salvar">
-        </div>
-        <div>
-          <label for="tipoLeitor">Tipo</label>
-          <select id="tipoLeitor" data-campo-outro="outroTipoLeitor"><option value="">Não informado</option><option>Aluno</option><option>Professor</option><option>Funcionário</option><option>Outro</option></select>
-          <input class="campo-outro oculto" id="outroTipoLeitor" placeholder="Digite o tipo de leitor">
-        </div>
-      </div>
+      <label for="tipoLeitor">Tipo</label>
+      <select id="tipoLeitor" data-campo-outro="outroTipoLeitor"><option value="">Não informado</option><option>Aluno</option><option>Professor</option><option>Funcionário</option><option>Outro</option></select>
+      <input class="campo-outro oculto" id="outroTipoLeitor" placeholder="Digite o tipo de leitor">
       <label for="turmaLeitor">Turma ou setor</label>
       <select id="turmaLeitor" data-campo-outro="outraTurmaLeitor">
         <option value="">Não informado</option>
@@ -204,14 +215,9 @@
   <dialog id="janelaBiblioteca" class="janela-grande">
     <form method="dialog" id="formularioBiblioteca">
       <div class="titulo-modal"><h2 id="tituloFormularioLivro">Cadastrar livro</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
-      <p class="explicacao-cadastro">Preencha somente os dados que precisam. O ID é criado automaticamente.</p>
-      <div class="grade-formulario">
-        <div>
-          <label for="codigoLivro">ID do livro</label>
-          <input class="campo-automatico" id="codigoLivro" readonly placeholder="Gerado ao salvar" aria-label="ID numérico do livro gerado automaticamente ao salvar">
-        </div>
-        <div><label for="isbnLivro">ISBN</label><input id="isbnLivro" placeholder="Ex.: 9788535914849"></div>
-      </div>
+      <p class="explicacao-cadastro">Preencha somente os dados que precisam.</p>
+      <label for="isbnLivro">ISBN</label>
+      <input id="isbnLivro" placeholder="Ex.: 9788535914849">
       <label for="tituloLivro">Título</label>
       <input id="tituloLivro">
       <div class="grade-formulario">
@@ -319,17 +325,7 @@
     </form>
   </dialog>
 
-  <dialog id="janelaResponsavel">
-    <form id="formularioResponsavel">
-      <div class="titulo-modal"><h2>Quem está realizando esta operação?</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
-      <p>Informe seu nome para registrar a operação no histórico.</p>
-      <label for="nomeResponsavelOperacao">Seu nome</label>
-      <input id="nomeResponsavelOperacao" type="text" required minlength="3" maxlength="160" autocomplete="off" placeholder="Digite seu nome" autofocus>
-      <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button type="submit" class="botao-principal">Confirmar operação</button></div>
-    </form>
-  </dialog>
-
   <div class="aviso-flutuante" id="aviso-flutuante" role="status"></div>
-  <script src="/js/interacao.js?v=20260831-1"></script>
+  <script src="/js/interacao.js?v=20261006-1"></script>
 </body>
 </html>

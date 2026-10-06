@@ -84,6 +84,27 @@ function publicUser(row) {
   };
 }
 
+function normalizeRegistrationName(value) {
+  const name = String(value ?? '').trim().replace(/\s+/g, ' ');
+  if (name.length < 3 || name.length > 160 || !/^[\p{L}][\p{L}\s'-]*$/u.test(name)) return null;
+  return name.replace(/\p{L}+/gu, word => word.charAt(0).toLocaleUpperCase('pt-BR') + word.slice(1).toLocaleLowerCase('pt-BR'));
+}
+
+function normalizeEmail(value) {
+  const email = String(value ?? '').trim().toLowerCase();
+  if (email.length < 5 || email.length > 80 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+  return email;
+}
+
+function validRegistrationPassword(value) {
+  const password = String(value ?? '');
+  return password.length >= 8
+    && password.length <= 200
+    && /[a-z]/.test(password)
+    && /[A-Z]/.test(password)
+    && /\d/.test(password);
+}
+
 async function createSession(response, userId) {
   const token = crypto.randomBytes(32).toString('base64url');
   const expiresAt = new Date(Date.now() + sessionHours * 60 * 60 * 1000);
@@ -132,6 +153,14 @@ const loginLimiter = rateLimit({
   message: { message: 'Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.' }
 });
 
+const registrationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { message: 'Muitas tentativas de cadastro. Aguarde alguns minutos e tente novamente.' }
+});
+
 app.get('/api/health', asyncRoute(async (_request, response) => {
   await pool.query('SELECT 1');
   response.json({ status: 'ok', database: 'connected' });
@@ -147,7 +176,7 @@ app.post('/api/auth/login', loginLimiter, asyncRoute(async (request, response) =
   if (!username || !password) return response.status(400).json({ message: 'Informe usuário e senha.' });
   const { rows } = await pool.query(
     `SELECT id::TEXT, username, password_hash, name, role
-     FROM app_users WHERE username = $1 AND active = TRUE`,
+     FROM app_users WHERE (username = $1 OR LOWER(email) = $1) AND active = TRUE`,
     [username]
   );
   const user = rows[0];
@@ -156,6 +185,33 @@ app.post('/api/auth/login', loginLimiter, asyncRoute(async (request, response) =
   await pool.query('DELETE FROM app_sessions WHERE expires_at <= NOW()');
   await createSession(response, Number(user.id));
   response.json({ user: publicUser(user) });
+}));
+
+app.post('/api/auth/register', registrationLimiter, requireSameOrigin, asyncRoute(async (request, response) => {
+  const name = normalizeRegistrationName(request.body?.name);
+  const email = normalizeEmail(request.body?.email);
+  const password = String(request.body?.password ?? '');
+  if (!name) return response.status(400).json({ message: 'Informe seu nome completo usando apenas letras, espaços, apóstrofos ou hífens.' });
+  if (!email) return response.status(400).json({ message: 'Informe um e-mail válido com até 80 caracteres.' });
+  if (!validRegistrationPassword(password)) {
+    return response.status(400).json({ message: 'A senha deve ter pelo menos 8 caracteres, incluindo letra maiúscula, minúscula e número.' });
+  }
+  const passwordHash = await bcrypt.hash(password, 12);
+  let user;
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO app_users (username, email, password_hash, name, role)
+       VALUES ($1, $2, $3, $4, 'Biblioteca')
+       RETURNING id::TEXT, username, name, role`,
+      [email, email, passwordHash, name]
+    );
+    user = rows[0];
+  } catch (error) {
+    if (error?.code === '23505') return response.status(409).json({ message: 'Já existe uma conta cadastrada com este e-mail.' });
+    throw error;
+  }
+  await createSession(response, Number(user.id));
+  response.status(201).json({ user: publicUser(user) });
 }));
 
 app.get('/api/auth/session', requireAuth, (request, response) => {
@@ -177,17 +233,6 @@ app.post('/api/auth/verify-password', requireAuth, requireSameOrigin, asyncRoute
 }));
 
 app.use('/api', requireAuth, requireSameOrigin);
-
-app.use('/api', (request, response, next) => {
-  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) return next();
-  const value = request.body?.operatorName;
-  const operatorName = typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
-  if (operatorName.length < 3 || operatorName.length > 160) {
-    return response.status(400).json({ message: 'Informe o nome de quem esta realizando a operacao (3 a 160 caracteres).', code: 'OPERATOR_REQUIRED' });
-  }
-  request.user = { ...request.user, operatorName };
-  next();
-});
 
 app.get('/api/audit', asyncRoute(async (request, response) => {
   if (request.user.role !== 'Diretor') return response.status(403).json({ message: 'Somente a direcao pode consultar o historico de acoes.' });

@@ -188,43 +188,7 @@ function formatarData(valor) {
   return valor ? lerData(valor).toLocaleDateString('pt-BR') : '—';
 }
 
-function solicitarResponsavelOperacao() {
-  const janela = $('#janelaResponsavel');
-  const formulario = $('#formularioResponsavel');
-  const campo = $('#nomeResponsavelOperacao');
-  if (janela.open) return Promise.reject(new Error('Conclua a confirmação em andamento.'));
-  formulario.reset();
-  campo.setCustomValidity('');
-  return new Promise((resolve, reject) => {
-    let nomeConfirmado = '';
-    const aoEnviar = evento => {
-      evento.preventDefault();
-      const nome = campo.value.trim().replace(/\s+/g, ' ');
-      campo.setCustomValidity(nome.length < 3 ? 'Informe seu nome com pelo menos 3 caracteres.' : '');
-      if (!formulario.reportValidity()) return;
-      nomeConfirmado = nome;
-      janela.close();
-    };
-    const aoDigitar = () => campo.setCustomValidity('');
-    formulario.addEventListener('submit', aoEnviar);
-    campo.addEventListener('input', aoDigitar);
-    janela.addEventListener('close', () => {
-      formulario.removeEventListener('submit', aoEnviar);
-      campo.removeEventListener('input', aoDigitar);
-      if (nomeConfirmado) resolve(nomeConfirmado);
-      else reject(new Error('Operação cancelada. Nenhuma alteração foi enviada.'));
-    }, { once: true });
-    janela.showModal();
-    campo.focus();
-  });
-}
-
 async function requisitarApi(caminho, opcoes = {}) {
-  const metodo = (opcoes.method || 'GET').toUpperCase();
-  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(metodo) && !caminho.startsWith('/api/auth/')) {
-    const operatorName = await solicitarResponsavelOperacao();
-    opcoes = { ...opcoes, body: JSON.stringify({ ...JSON.parse(opcoes.body || '{}'), operatorName }) };
-  }
   let resposta;
   try {
     resposta = await fetch(caminho, {
@@ -422,10 +386,6 @@ function limparCamposOutro(formulario) {
   formulario.querySelectorAll('[data-campo-outro]').forEach(seletor => atualizarCampoOutro(seletor));
 }
 
-function atualizarPreviaIdLeitor() {
-  $('#matriculaLeitor').value = leitorEmEdicao?.matricula || '';
-}
-
 $('#mostrarSenha').addEventListener('click', () => {
   $('#senha').type = $('#senha').type === 'password' ? 'text' : 'password';
 });
@@ -449,6 +409,58 @@ $('#formularioLogin').addEventListener('submit', async evento => {
     exibirSistema(resultado.user);
   } catch (erro) {
     tratarErroOperacao(erro, $('#erroLogin'));
+  } finally {
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+  }
+});
+
+function validarSenhaCadastro() {
+  const senha = $('#senhaCadastroConta');
+  const confirmacao = $('#confirmacaoSenhaCadastroConta');
+  const forte = senha.value.length >= 8 && /[a-z]/.test(senha.value) && /[A-Z]/.test(senha.value) && /\d/.test(senha.value);
+  senha.setCustomValidity(forte || !senha.value ? '' : 'Use ao menos 8 caracteres, com letra maiúscula, minúscula e número.');
+  confirmacao.setCustomValidity(confirmacao.value && confirmacao.value !== senha.value ? 'As senhas não coincidem.' : '');
+}
+
+$('#abrirCadastroConta').addEventListener('click', () => {
+  $('#formularioCadastroConta').reset();
+  $('#erroCadastroConta').textContent = '';
+  validarSenhaCadastro();
+  $('#janelaCadastroConta').showModal();
+  $('#nomeCadastroConta').focus();
+});
+
+$('#nomeCadastroConta').addEventListener('input', evento => {
+  evento.target.value = formatarNomeProprio(evento.target.value);
+});
+$('#senhaCadastroConta').addEventListener('input', validarSenhaCadastro);
+$('#confirmacaoSenhaCadastroConta').addEventListener('input', validarSenhaCadastro);
+
+$('#formularioCadastroConta').addEventListener('submit', async evento => {
+  evento.preventDefault();
+  validarSenhaCadastro();
+  if (!$('#formularioCadastroConta').reportValidity()) return;
+  const botao = $('#salvarCadastroConta');
+  const textoOriginal = botao.textContent;
+  botao.disabled = true;
+  botao.textContent = 'Criando conta...';
+  $('#erroCadastroConta').textContent = '';
+  try {
+    const resultado = await requisitarApi('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: $('#nomeCadastroConta').value.trim(),
+        email: $('#emailCadastroConta').value.trim(),
+        password: $('#senhaCadastroConta').value
+      })
+    });
+    await carregarDadosServidor({ migrarLocais: true });
+    $('#janelaCadastroConta').close();
+    exibirSistema(resultado.user);
+    mostrarAviso('Conta criada com sucesso.');
+  } catch (erro) {
+    tratarErroOperacao(erro, $('#erroCadastroConta'));
   } finally {
     botao.disabled = false;
     botao.textContent = textoOriginal;
@@ -524,16 +536,14 @@ function abrirFormularioLeitor(leitorId = null) {
   leitorEmEdicao = leitorId === null ? null : leitores.find(leitor => leitor.id === Number(leitorId));
   $('#tituloFormularioLeitor').textContent = leitorEmEdicao ? 'Editar leitor' : 'Cadastrar leitor';
   $('#explicacaoFormularioLeitor').textContent = leitorEmEdicao
-    ? 'Corrija os dados ou atualize a turma/setor. O ID numérico original será mantido.'
-    : 'Preencha somente os dados que desejar. O ID numérico é criado automaticamente e não será alterado.';
+    ? 'Corrija os dados ou atualize a turma/setor.'
+    : 'Preencha somente os dados que desejar.';
   $('#salvarLeitor').textContent = leitorEmEdicao ? 'Atualizar leitor' : 'Salvar leitor';
   if (leitorEmEdicao) {
-    $('#matriculaLeitor').value = leitorEmEdicao.matricula;
     $('#nomeLeitor').value = formatarNomeProprio(leitorEmEdicao.nome || '');
     definirOpcaoOuOutro('tipoLeitor', leitorEmEdicao.tipo);
     definirOpcaoOuOutro('turmaLeitor', leitorEmEdicao.turma);
   }
-  atualizarPreviaIdLeitor();
   $('#janelaLeitor').showModal();
 }
 
@@ -651,7 +661,6 @@ function abrirFormularioLivro(livroId = null) {
   $('#salvarItemBiblioteca').textContent = livroEmEdicao ? 'Atualizar livro' : 'Salvar livro';
   $('#ajudaEstoque').classList.toggle('oculto', !livroEmEdicao);
   if (livroEmEdicao) {
-    $('#codigoLivro').value = livroEmEdicao.code;
     $('#isbnLivro').value = livroEmEdicao.isbn || '';
     $('#tituloLivro').value = livroEmEdicao.title;
     $('#autorLivro').value = livroEmEdicao.author;
@@ -665,7 +674,6 @@ function abrirFormularioLivro(livroId = null) {
     $('#quantidadeLivro').min = Math.max(1, indisponiveis);
     $('#ajudaEstoque').textContent = `${indisponiveis} exemplar(es) estão emprestados ou perdidos. A quantidade total não pode ser menor que esse número.`;
   } else {
-    $('#codigoLivro').value = '';
     $('#quantidadeLivro').min = 1;
     $('#quantidadeLivro').value = 1;
   }
@@ -693,7 +701,7 @@ $('#salvarLeitor').addEventListener('click', async evento => {
     $('#formularioLeitor').reset();
     limparCamposOutro($('#formularioLeitor'));
     $('#janelaLeitor').close();
-    mostrarAviso(editando ? 'Informações do leitor atualizadas.' : `Leitor cadastrado com o ID ${resultado.reader.matricula}.`);
+    mostrarAviso(editando ? 'Informações do leitor atualizadas.' : 'Leitor cadastrado com sucesso.');
     leitorEmEdicao = null;
   } catch (erro) {
     tratarErroOperacao(erro);

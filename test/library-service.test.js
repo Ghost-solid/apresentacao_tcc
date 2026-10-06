@@ -89,6 +89,42 @@ test('API exige sessão e autentica com senha protegida no banco', async () => {
   assert.deepEqual((await state.json()).books, []);
 });
 
+test('API cria conta de Biblioteca com e-mail, nome e senha forte', async () => {
+  const invalid = await fetch(`${baseUrl}/api/auth/register`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'Ana 123', email: 'email-invalido', password: 'fraca' })
+  });
+  assert.equal(invalid.status, 400);
+
+  const registration = await fetch(`${baseUrl}/api/auth/register`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'maria da silva', email: 'maria.silva@escola.com', password: 'SenhaForte123' })
+  });
+  assert.equal(registration.status, 201);
+  const { user } = await registration.json();
+  assert.equal(user.username, 'maria.silva@escola.com');
+  assert.equal(user.name, 'Maria Da Silva');
+  assert.equal(user.role, 'Biblioteca');
+  assert.match(registration.headers.get('set-cookie') || '', /^ds_legacy_session=/);
+
+  const stored = await connection.query('SELECT email, password_hash, role FROM app_users WHERE email = $1', ['maria.silva@escola.com']);
+  assert.equal(stored.rows[0].email, 'maria.silva@escola.com');
+  assert.equal(stored.rows[0].role, 'Biblioteca');
+  assert.equal(await bcrypt.compare('SenhaForte123', stored.rows[0].password_hash), true);
+
+  const duplicate = await fetch(`${baseUrl}/api/auth/register`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'Maria Da Silva', email: 'maria.silva@escola.com', password: 'SenhaForte123' })
+  });
+  assert.equal(duplicate.status, 409);
+
+  const loginWithEmail = await fetch(`${baseUrl}/api/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'maria.silva@escola.com', password: 'SenhaForte123' })
+  });
+  assert.equal(loginWithEmail.status, 200);
+});
+
 test('regras de leitores, livros, empréstimos, reservas, renovação e devolução', async () => {
   const firstReader = await library.createReader({ nome: 'aNA mÁrIA', tipo: 'Aluno', turma: '1º A' });
   assert.equal(firstReader.matricula, '0001');
@@ -188,14 +224,6 @@ test('audit records authenticated actor, restricts access and survives archival'
   const headers = { Cookie: cookie, 'Content-Type': 'application/json' };
   assert.equal((await fetch(`${baseUrl}/api/audit`)).status, 401);
   assert.equal((await fetch(`${baseUrl}/api/audit`, { headers })).status, 403);
-  for (const operatorName of [undefined, '', '   ', 'ab', 'a'.repeat(161), { name: 'fake' }]) {
-    const invalid = await fetch(`${baseUrl}/api/readers`, {
-      method: 'POST', headers, body: JSON.stringify({ nome: 'Nao Cadastrar', operatorName })
-    });
-    assert.equal(invalid.status, 400);
-    assert.equal((await invalid.json()).code, 'OPERATOR_REQUIRED');
-  }
-  assert.equal((await connection.query("SELECT COUNT(*)::INTEGER AS total FROM readers WHERE name = 'Nao Cadastrar'")).rows[0].total, 0);
   const response = await fetch(`${baseUrl}/api/readers`, {
     method: 'POST', headers,
     body: JSON.stringify({ nome: 'Leitor Auditoria', operatorName: 'Maria da Biblioteca', username: 'forged', user: { id: 999, name: 'forged' } })
@@ -204,18 +232,18 @@ test('audit records authenticated actor, restricts access and survives archival'
   const { reader } = await response.json();
   const entries = await connection.query('SELECT * FROM audit_logs WHERE entity = $1 AND entity_id = $2', ['leitor', reader.id]);
   assert.equal(entries.rows[0].username, 'biblioteca');
-  assert.equal(entries.rows[0].user_name, 'Maria da Biblioteca');
+  assert.equal(entries.rows[0].user_name, 'Bibliotecária');
   assert.equal(entries.rows[0].user_id, 1);
   assert.equal(entries.rows[0].action, 'cadastrar');
   assert.ok(entries.rows[0].created_at);
   const removed = await fetch(`${baseUrl}/api/readers/${reader.id}/delete`, {
-    method: 'POST', headers, body: JSON.stringify({ password: 'SenhaSegura@123', operatorName: 'Joao da Biblioteca' })
+    method: 'POST', headers, body: JSON.stringify({ password: 'SenhaSegura@123' })
   });
   assert.equal(removed.status, 204);
   const archived = await connection.query('SELECT action, user_name FROM audit_logs WHERE entity = $1 AND entity_id = $2 ORDER BY id', ['leitor', reader.id]);
   assert.deepEqual(archived.rows.map(row => row.action), ['cadastrar', 'excluir']);
-  assert.equal(archived.rows[1].user_name, 'Joao da Biblioteca');
-  assert.equal((await fetch(`${baseUrl}/api/backup`, { method: 'POST', headers, body: JSON.stringify({ operatorName: 'Maria da Biblioteca' }) })).status, 200);
+  assert.equal(archived.rows[1].user_name, 'Bibliotecária');
+  assert.equal((await fetch(`${baseUrl}/api/backup`, { method: 'POST', headers, body: JSON.stringify({}) })).status, 200);
   // Promote the test user to exercise the actual authorization boundary.
   await connection.query("UPDATE app_users SET role = 'Diretor' WHERE id = 1");
   for (let index = 0; index < 27; index++) {

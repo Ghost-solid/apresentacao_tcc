@@ -67,6 +67,9 @@ test('formulários usam seletores pesquisáveis únicos e podem ser cancelados v
   assert.ok(botoesDeSaida.every(botao => /type="button"/.test(botao)));
   assert.doesNotMatch(html, /<button[^>]+value="cancel"/);
   assert.match(source, /closest\('dialog'\)\?\.close\(\)/);
+  assert.doesNotMatch(html, /responsavelEmprestimo|janelaResponsavel/);
+  assert.doesNotMatch(source, /solicitarResponsavelOperacao|operatorName/);
+  assert.doesNotMatch(html, /id="matriculaLeitor"|id="codigoLivro"|Gerado ao salvar/);
 });
 
 test('Estoque permite escolher cada campo da pesquisa', () => {
@@ -99,6 +102,17 @@ test('interface permite alternar entre modo claro e escuro', () => {
   assert.match(source, /const chaveTema = 'ds_theme'/);
   assert.match(source, /localStorage\.setItem\(chaveTema, proximoTema\)/);
   assert.match(styles, /:root\[data-theme="dark"\]/);
+});
+
+test('tela de entrada permite criar uma conta de Biblioteca com campos validados', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'interacao.js'), 'utf8');
+  assert.match(html, /id="abrirCadastroConta"/);
+  assert.match(html, /id="nomeCadastroConta"[^>]+required/);
+  assert.match(html, /id="emailCadastroConta" type="email"[^>]+required/);
+  assert.match(html, /id="senhaCadastroConta" type="password"[^>]+minlength="8"/);
+  assert.match(source, /requisitarApi\('\/api\/auth\/register'/);
+  assert.match(source, /function validarSenhaCadastro\(\)/);
 });
 
 test('esquema PostgreSQL é executável e cria todas as entidades centrais', async () => {
