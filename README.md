@@ -83,7 +83,14 @@ Depois, acesse `http://localhost:8000`.
 
 Na tela de login, use **Criar uma conta** para cadastrar nome, e-mail e senha. A senha precisa ter ao menos 8 caracteres, incluindo letra maiúscula, minúscula e número.
 
-Contas criadas pela tela recebem o perfil **Biblioteca**, que permite operar o sistema. O perfil **Diretor** é configurado pelo `.env` e libera relatórios e histórico de ações.
+Contas criadas pela tela ficam **inativas e sem sessão** até a aprovação. Uma conta
+**Diretor**, configurada pelo `.env`, deve entrar em **Contas pendentes** e clicar
+em **Aprovar acesso**. Só então a pessoa pode entrar com e-mail e senha, no perfil
+**Biblioteca**. A aprovação fica registrada no histórico de ações.
+
+As contas existentes mantêm seu acesso; contas desativadas sem solicitação pendente
+não aparecem nessa lista. Ao atualizar, reinicie o servidor para aplicar o esquema
+(com Docker, recrie a aplicação com `docker compose --env-file .env.docker up -d --build`).
 
 Todas as ações são registradas automaticamente com a conta conectada. O nome do responsável não é digitado manualmente.
 
@@ -138,7 +145,7 @@ apresentacao_tcc/
 
 O JavaScript da interface está em `public/js/`. O `interacao.js` apenas inicializa
 a aplicação e coordena as atualizações das telas. A pasta `modulos/` agrupa o
-restante por responsabilidade: autenticação, leitores, estoque, circulação
+restante por responsabilidade: autenticação, aprovação de contas, leitores, estoque, circulação
 (empréstimos, reservas e devoluções), exclusão, backup, histórico e painel.
 Os módulos de API, estado, regras, interface e utilitários compartilham o que
 essas funcionalidades precisam. São módulos nativos, sem etapa de compilação.

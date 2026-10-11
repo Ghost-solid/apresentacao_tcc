@@ -15,7 +15,7 @@ export async function carregarHistoricoAcoes(pagina = 1) {
   estado.textContent = 'Carregando...';
   $('#linhasHistoricoAcoes').innerHTML = '';
   $('#paginaHistoricoAcoes').textContent = '';
-  const acoes = { cadastrar: 'Cadastro', editar: 'Edição', excluir: 'Exclusão', emprestar: 'Empréstimo', devolver: 'Devolução', renovar: 'Renovação', reservar: 'Reserva', cancelar: 'Cancelamento', importar: 'Importação', backup: 'Backup' };
+  const acoes = { cadastrar: 'Cadastro', editar: 'Edição', excluir: 'Exclusão', emprestar: 'Empréstimo', devolver: 'Devolução', renovar: 'Renovação', reservar: 'Reserva', cancelar: 'Cancelamento', importar: 'Importação', backup: 'Backup', aprovar: 'Aprovação de conta' };
   try {
     const dados = await requisitarApi(`/api/audit?page=${pagina}`);
     if (requisicao !== requisicaoHistoricoAcoes || appState.usuarioAtual?.perfil !== 'Diretor') return;

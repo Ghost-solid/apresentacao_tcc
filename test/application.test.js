@@ -150,6 +150,14 @@ test('esquema PostgreSQL é executável e cria todas as entidades centrais', asy
   const database = new PGlite();
   try {
     await database.exec(schema);
+    // Simula uma conta autorizada criada antes de existir aprovação de cadastros.
+    await database.exec(`
+      ALTER TABLE app_users DROP CONSTRAINT app_users_pending_inactive;
+      ALTER TABLE app_users DROP COLUMN approval_pending;
+      ALTER TABLE app_users ALTER COLUMN active SET DEFAULT TRUE;
+      INSERT INTO app_users (username, password_hash, name, role)
+      VALUES ('admin-antigo', 'hash', 'Diretor antigo', 'Diretor');
+    `);
     const result = await database.query(
       `SELECT tablename FROM pg_tables
        WHERE schemaname = 'public' ORDER BY tablename`
@@ -175,6 +183,11 @@ test('esquema PostgreSQL é executável e cria todas as entidades centrais', asy
       WHERE readers.name = 'Leitor antigo' AND books.title = 'Livro antigo';
     `);
     await database.exec(schema);
+    const oldAccount = await database.query("SELECT active, approval_pending FROM app_users WHERE username = 'admin-antigo'");
+    assert.deepEqual(oldAccount.rows[0], { active: true, approval_pending: false });
+    const newAccount = await database.query("INSERT INTO app_users (username, password_hash, name, role) VALUES ('nova', 'hash', 'Nova Conta', 'Biblioteca') RETURNING active, approval_pending");
+    assert.deepEqual(newAccount.rows[0], { active: false, approval_pending: false });
+    await assert.rejects(() => database.query("UPDATE app_users SET approval_pending = TRUE WHERE username = 'admin-antigo'"), /app_users_pending_inactive/);
     const migratedReader = await database.query('SELECT registration_code FROM readers WHERE name = $1', ['Leitor antigo']);
     const migratedBook = await database.query('SELECT code FROM books WHERE title = $1', ['Livro antigo']);
     const migratedLoan = await database.query('SELECT id, status FROM loans');

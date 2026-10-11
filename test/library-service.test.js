@@ -4,6 +4,7 @@ const path = require('node:path');
 const { after, before, test } = require('node:test');
 const { PGlite } = require('@electric-sql/pglite');
 const bcrypt = require('bcryptjs');
+const crypto = require('node:crypto');
 
 let postgres;
 let dataReferencia;
@@ -39,6 +40,7 @@ require.cache[databaseModule] = {
 };
 
 const library = require('../src/library-service');
+const accounts = require('../src/account-service');
 const app = require('../server');
 
 let server;
@@ -51,9 +53,14 @@ before(async () => {
   // As devoluções usam CURRENT_DATE do banco, que pode diferir do dia UTC.
   dataReferencia = (await connection.query('SELECT CURRENT_DATE::TEXT AS today')).rows[0].today;
   await connection.query(
-    `INSERT INTO app_users (username, password_hash, name, role)
-     VALUES ($1, $2, $3, $4)`,
+    `INSERT INTO app_users (username, password_hash, name, role, active)
+     VALUES ($1, $2, $3, $4, TRUE)`,
     ['biblioteca', await bcrypt.hash('SenhaSegura@123', 4), 'Bibliotecária', 'Biblioteca']
+  );
+  await connection.query(
+    `INSERT INTO app_users (username, password_hash, name, role, active)
+     VALUES ($1, $2, $3, $4, TRUE)`,
+    ['diretor', await bcrypt.hash('DiretorSeguro@123', 4), 'Direção', 'Diretor']
   );
   await new Promise(resolve => {
     server = app.listen(0, '127.0.0.1', () => {
@@ -92,7 +99,7 @@ test('API exige sessão e autentica com senha protegida no banco', async () => {
   assert.deepEqual((await state.json()).books, []);
 });
 
-test('API cria conta de Biblioteca com e-mail, nome e senha forte', async () => {
+test('cadastro público cria conta inativa e não permite acesso antes da aprovação', async () => {
   const invalid = await fetch(`${baseUrl}/api/auth/register`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: 'Ana 123', email: 'email-invalido', password: 'fraca' })
@@ -101,19 +108,24 @@ test('API cria conta de Biblioteca com e-mail, nome e senha forte', async () => 
 
   const registration = await fetch(`${baseUrl}/api/auth/register`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'maria da silva', email: 'maria.silva@escola.com', password: 'SenhaForte123' })
+    body: JSON.stringify({ name: 'maria da silva', email: 'maria.silva@escola.com', password: 'SenhaForte123', role: 'Diretor', active: true, approval_pending: false })
   });
   assert.equal(registration.status, 201);
-  const { user } = await registration.json();
-  assert.equal(user.username, 'maria.silva@escola.com');
-  assert.equal(user.name, 'Maria Da Silva');
-  assert.equal(user.role, 'Biblioteca');
-  assert.match(registration.headers.get('set-cookie') || '', /^ds_legacy_session=/);
+  const result = await registration.json();
+  assert.equal(result.status, 'pending');
+  assert.match(result.message, /aprovação/);
+  assert.equal(result.user, undefined);
+  assert.equal(registration.headers.get('set-cookie'), null);
 
-  const stored = await connection.query('SELECT email, password_hash, role FROM app_users WHERE email = $1', ['maria.silva@escola.com']);
+  const stored = await connection.query('SELECT id, username, name, email, password_hash, role, active, approval_pending FROM app_users WHERE email = $1', ['maria.silva@escola.com']);
   assert.equal(stored.rows[0].email, 'maria.silva@escola.com');
   assert.equal(stored.rows[0].role, 'Biblioteca');
+  assert.equal(stored.rows[0].username, 'maria.silva@escola.com');
+  assert.equal(stored.rows[0].name, 'Maria Da Silva');
+  assert.equal(stored.rows[0].active, false);
+  assert.equal(stored.rows[0].approval_pending, true);
   assert.equal(await bcrypt.compare('SenhaForte123', stored.rows[0].password_hash), true);
+  assert.equal((await connection.query('SELECT COUNT(*)::INTEGER AS total FROM app_sessions WHERE user_id = $1', [stored.rows[0].id])).rows[0].total, 0);
 
   const duplicate = await fetch(`${baseUrl}/api/auth/register`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -125,7 +137,86 @@ test('API cria conta de Biblioteca com e-mail, nome e senha forte', async () => 
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: 'maria.silva@escola.com', password: 'SenhaForte123' })
   });
-  assert.equal(loginWithEmail.status, 200);
+  assert.equal(loginWithEmail.status, 401);
+  assert.equal(loginWithEmail.headers.get('set-cookie'), null);
+
+  // Mesmo uma sessão pré-existente/forjada válida no banco não libera uma conta pendente.
+  const token = 'sessao-de-conta-pendente';
+  await connection.query("INSERT INTO app_sessions (token_hash, user_id, expires_at) VALUES ($1, $2, NOW() + INTERVAL '1 hour')",
+    [crypto.createHash('sha256').update(token).digest('hex'), stored.rows[0].id]);
+  const headers = { Cookie: `ds_legacy_session=${token}`, 'Content-Type': 'application/json' };
+  for (const [method, url] of [
+    ['GET', '/api/state'], ['GET', '/api/users/pending'], ['POST', `/api/users/${stored.rows[0].id}/approve`],
+    ['POST', '/api/readers'], ['PUT', '/api/readers/1'], ['POST', '/api/readers/1/delete'],
+    ['POST', '/api/books'], ['PUT', '/api/books/1'], ['POST', '/api/books/1/delete']
+  ]) {
+    const denied = await fetch(`${baseUrl}${url}`, { method, headers, ...(method === 'GET' ? {} : { body: '{}' }) });
+    assert.equal(denied.status, 401, `${method} ${url}`);
+  }
+  await connection.query('DELETE FROM app_sessions WHERE user_id = $1', [stored.rows[0].id]);
+});
+
+test('somente Diretor lista e aprova solicitações, com auditoria e sem promover o perfil', async () => {
+  const { rows: [pending] } = await connection.query('SELECT id FROM app_users WHERE email = $1', ['maria.silva@escola.com']);
+  const login = async (username, password) => {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password })
+    });
+    assert.equal(response.status, 200);
+    return { Cookie: response.headers.get('set-cookie').split(';')[0], 'Content-Type': 'application/json' };
+  };
+  const librarianHeaders = await login('biblioteca', 'SenhaSegura@123');
+  assert.equal((await fetch(`${baseUrl}/api/users/pending`)).status, 401);
+  assert.equal((await fetch(`${baseUrl}/api/users/pending`, { headers: librarianHeaders })).status, 403);
+  assert.equal((await fetch(`${baseUrl}/api/users/${pending.id}/approve`, { method: 'POST', headers: librarianHeaders })).status, 403);
+  await assert.rejects(() => accounts.approveAccount(pending.id, { id: 1, role: 'Biblioteca' }), /Somente a direção/);
+
+  const headers = await login('diretor', 'DiretorSeguro@123');
+  const list = await fetch(`${baseUrl}/api/users/pending`, { headers });
+  assert.equal(list.status, 200);
+  assert.equal(list.headers.get('cache-control'), 'no-store');
+  const { users } = await list.json();
+  assert.equal(users.length, 1);
+  assert.deepEqual(Object.keys(users[0]).sort(), ['createdAt', 'email', 'id', 'name']);
+  assert.equal(users[0].id, pending.id);
+  const approved = await fetch(`${baseUrl}/api/users/${pending.id}/approve`, {
+    method: 'POST', headers, body: JSON.stringify({ role: 'Diretor' })
+  });
+  assert.equal(approved.status, 200);
+  assert.equal(approved.headers.get('set-cookie'), null);
+  const { rows: [account] } = await connection.query('SELECT active, approval_pending, role FROM app_users WHERE id = $1', [pending.id]);
+  assert.deepEqual(account, { active: true, approval_pending: false, role: 'Biblioteca' });
+  assert.equal((await fetch(`${baseUrl}/api/users/${pending.id}/approve`, { method: 'POST', headers })).status, 409);
+  assert.equal((await fetch(`${baseUrl}/api/users/999999/approve`, { method: 'POST', headers })).status, 404);
+  assert.equal((await fetch(`${baseUrl}/api/users/invalido/approve`, { method: 'POST', headers })).status, 400);
+  assert.deepEqual((await (await fetch(`${baseUrl}/api/users/pending`, { headers })).json()).users, []);
+  const { rows: audit } = await connection.query("SELECT user_id, username, action FROM audit_logs WHERE entity = 'conta' AND entity_id = $1", [pending.id]);
+  assert.deepEqual(audit, [{ user_id: 2, username: 'diretor', action: 'aprovar' }]);
+  const newHeaders = await login('maria.silva@escola.com', 'SenhaForte123');
+  assert.equal((await fetch(`${baseUrl}/api/state`, { headers: newHeaders })).status, 200);
+  assert.equal((await fetch(`${baseUrl}/api/users/pending`, { headers: newHeaders })).status, 403);
+});
+
+test('aprovação não reativa contas desativadas nem libera acesso quando a auditoria falha', async () => {
+  const user = { id: 2, username: 'diretor', name: 'Direção', role: 'Diretor' };
+  const { rows: [inactive] } = await connection.query(
+    "INSERT INTO app_users (username, password_hash, name, role) VALUES ('inativa', 'hash', 'Conta Desativada', 'Biblioteca') RETURNING id, active, approval_pending"
+  );
+  assert.equal(inactive.active, false);
+  assert.equal(inactive.approval_pending, false);
+  await assert.rejects(() => accounts.approveAccount(inactive.id, user), /solicitação de aprovação pendente/);
+  await accounts.registerAccount({ name: 'Conta Pendente', email: 'pendente@escola.com', password: 'SenhaForte123' });
+  const { rows: [pending] } = await connection.query('SELECT id FROM app_users WHERE email = $1', ['pendente@escola.com']);
+  await postgres.exec(`CREATE FUNCTION reject_account_approval() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+    BEGIN IF NEW.action = 'aprovar' THEN RAISE EXCEPTION 'approval audit unavailable'; END IF; RETURN NEW; END; $$;
+    CREATE TRIGGER reject_account_approval BEFORE INSERT ON audit_logs FOR EACH ROW EXECUTE FUNCTION reject_account_approval();`);
+  try {
+    await assert.rejects(() => accounts.approveAccount(pending.id, user), /approval audit unavailable/);
+    const { rows: [account] } = await connection.query('SELECT active, approval_pending FROM app_users WHERE id = $1', [pending.id]);
+    assert.deepEqual(account, { active: false, approval_pending: true });
+  } finally {
+    await postgres.exec('DROP TRIGGER reject_account_approval ON audit_logs; DROP FUNCTION reject_account_approval();');
+  }
 });
 
 test('regras de leitores, livros, empréstimos, reservas, renovação e devolução', async () => {

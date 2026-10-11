@@ -118,13 +118,14 @@ async function seedUser(client, { username, password, name, role }) {
   if (password.length < 8) throw new Error(`A senha configurada para ${username} precisa ter pelo menos 8 caracteres.`);
   const passwordHash = await bcrypt.hash(password, 12);
   await client.query(
-    `INSERT INTO app_users (username, password_hash, name, role)
-     VALUES (LOWER($1), $2, $3, $4)
+    `INSERT INTO app_users (username, password_hash, name, role, active, approval_pending)
+     VALUES (LOWER($1), $2, $3, $4, TRUE, FALSE)
      ON CONFLICT (username) DO UPDATE
        SET password_hash = EXCLUDED.password_hash,
            name = EXCLUDED.name,
            role = EXCLUDED.role,
            active = TRUE,
+           approval_pending = FALSE,
            updated_at = NOW()`,
     [username.trim(), passwordHash, name.trim(), role]
   );

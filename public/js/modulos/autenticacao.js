@@ -6,6 +6,7 @@ import { limparHistoricoAcoes } from './historico.js';
 import { abrirPagina } from './navegacao.js';
 import { reiniciarLeitores } from './leitores.js';
 import { reiniciarEstoque } from './estoque.js';
+import { limparContasPendentes } from './contas.js';
 
 async function configurarAcessoDemonstracao() {
   try {
@@ -34,6 +35,7 @@ function exibirSistema(usuario) {
 export function encerrarSessaoVisual() {
   appState.usuarioAtual = null;
   limparHistoricoAcoes();
+  limparContasPendentes();
   abrirPagina('painel');
   reiniciarLeitores();
   reiniciarEstoque();
@@ -44,6 +46,7 @@ export function encerrarSessaoVisual() {
   $('#sistema').classList.add('oculto');
   $('#paginaLogin').classList.remove('oculto');
   $('#formularioLogin').reset();
+  $('#estadoCadastroContaLogin').textContent = '';
 }
 
 function validarSenhaCadastro() {
@@ -126,10 +129,13 @@ export function inicializarAutenticacao() {
           password: $('#senhaCadastroConta').value
         })
       });
-      await carregarDadosServidor({ migrarLocais: true });
       $('#janelaCadastroConta').close();
-      exibirSistema(resultado.user);
-      mostrarAviso('Conta criada com sucesso.');
+      $('#usuario').value = $('#emailCadastroConta').value.trim().toLowerCase();
+      $('#senha').value = '';
+      $('#erroLogin').textContent = '';
+      $('#estadoCadastroContaLogin').textContent = resultado.message;
+      $('#formularioCadastroConta').reset();
+      $('#usuario').focus();
     } catch (erro) {
       tratarErroOperacao(erro, $('#erroCadastroConta'));
     } finally {

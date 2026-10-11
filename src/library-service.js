@@ -710,6 +710,7 @@ async function importLocalState(body, user) {
 }
 
 module.exports = {
+  recordAudit,
   listAudit,
   exportBackup,
   AppError,

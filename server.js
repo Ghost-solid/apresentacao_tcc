@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 
 const { pool, initializeDatabase, demoMode } = require('./src/database');
 const library = require('./src/library-service');
+const accounts = require('./src/account-service');
 
 const app = express();
 const root = __dirname;
@@ -84,27 +85,6 @@ function publicUser(row) {
   };
 }
 
-function normalizeRegistrationName(value) {
-  const name = String(value ?? '').trim().replace(/\s+/g, ' ');
-  if (name.length < 3 || name.length > 160 || !/^[\p{L}][\p{L}\s'-]*$/u.test(name)) return null;
-  return name.replace(/\p{L}+/gu, word => word.charAt(0).toLocaleUpperCase('pt-BR') + word.slice(1).toLocaleLowerCase('pt-BR'));
-}
-
-function normalizeEmail(value) {
-  const email = String(value ?? '').trim().toLowerCase();
-  if (email.length < 5 || email.length > 80 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
-  return email;
-}
-
-function validRegistrationPassword(value) {
-  const password = String(value ?? '');
-  return password.length >= 8
-    && password.length <= 200
-    && /[a-z]/.test(password)
-    && /[A-Z]/.test(password)
-    && /\d/.test(password);
-}
-
 async function createSession(response, userId) {
   const token = crypto.randomBytes(32).toString('base64url');
   const expiresAt = new Date(Date.now() + sessionHours * 60 * 60 * 1000);
@@ -122,7 +102,7 @@ async function currentSession(request) {
     `SELECT u.id::TEXT, u.username, u.name, u.role
      FROM app_sessions s
      JOIN app_users u ON u.id = s.user_id
-     WHERE s.token_hash = $1 AND s.expires_at > NOW() AND u.active = TRUE`,
+     WHERE s.token_hash = $1 AND s.expires_at > NOW() AND u.active = TRUE AND u.approval_pending = FALSE`,
     [tokenHash(token)]
   );
   return rows[0] ? { token, user: publicUser(rows[0]) } : null;
@@ -176,7 +156,7 @@ app.post('/api/auth/login', loginLimiter, asyncRoute(async (request, response) =
   if (!username || !password) return response.status(400).json({ message: 'Informe usuário e senha.' });
   const { rows } = await pool.query(
     `SELECT id::TEXT, username, password_hash, name, role
-     FROM app_users WHERE (username = $1 OR LOWER(email) = $1) AND active = TRUE`,
+     FROM app_users WHERE (username = $1 OR LOWER(email) = $1) AND active = TRUE AND approval_pending = FALSE`,
     [username]
   );
   const user = rows[0];
@@ -188,30 +168,7 @@ app.post('/api/auth/login', loginLimiter, asyncRoute(async (request, response) =
 }));
 
 app.post('/api/auth/register', registrationLimiter, requireSameOrigin, asyncRoute(async (request, response) => {
-  const name = normalizeRegistrationName(request.body?.name);
-  const email = normalizeEmail(request.body?.email);
-  const password = String(request.body?.password ?? '');
-  if (!name) return response.status(400).json({ message: 'Informe seu nome completo usando apenas letras, espaços, apóstrofos ou hífens.' });
-  if (!email) return response.status(400).json({ message: 'Informe um e-mail válido com até 80 caracteres.' });
-  if (!validRegistrationPassword(password)) {
-    return response.status(400).json({ message: 'A senha deve ter pelo menos 8 caracteres, incluindo letra maiúscula, minúscula e número.' });
-  }
-  const passwordHash = await bcrypt.hash(password, 12);
-  let user;
-  try {
-    const { rows } = await pool.query(
-      `INSERT INTO app_users (username, email, password_hash, name, role)
-       VALUES ($1, $2, $3, $4, 'Biblioteca')
-       RETURNING id::TEXT, username, name, role`,
-      [email, email, passwordHash, name]
-    );
-    user = rows[0];
-  } catch (error) {
-    if (error?.code === '23505') return response.status(409).json({ message: 'Já existe uma conta cadastrada com este e-mail.' });
-    throw error;
-  }
-  await createSession(response, Number(user.id));
-  response.status(201).json({ user: publicUser(user) });
+  response.status(201).json(await accounts.registerAccount(request.body));
 }));
 
 app.get('/api/auth/session', requireAuth, (request, response) => {
@@ -233,6 +190,15 @@ app.post('/api/auth/verify-password', requireAuth, requireSameOrigin, asyncRoute
 }));
 
 app.use('/api', requireAuth, requireSameOrigin);
+
+app.get('/api/users/pending', asyncRoute(async (request, response) => {
+  response.set('Cache-Control', 'no-store');
+  response.json({ users: await accounts.listPendingAccounts(request.user) });
+}));
+
+app.post('/api/users/:id/approve', asyncRoute(async (request, response) => {
+  response.json(await accounts.approveAccount(request.params.id, request.user));
+}));
 
 app.get('/api/audit', asyncRoute(async (request, response) => {
   if (request.user.role !== 'Diretor') return response.status(403).json({ message: 'Somente a direcao pode consultar o historico de acoes.' });

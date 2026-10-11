@@ -11,6 +11,7 @@ import { inicializarExclusao } from './modulos/exclusao.js';
 import { inicializarBackup } from './modulos/backup.js';
 import { inicializarHistorico } from './modulos/historico.js';
 import { inicializarPainel, renderizarPainel, renderizarRelatorio } from './modulos/painel.js';
+import { inicializarContas } from './modulos/contas.js';
 
 function renderizarTudo() {
   filtrarBiblioteca();
@@ -34,6 +35,7 @@ function iniciarAplicacao() {
   inicializarExclusao();
   inicializarBackup();
   inicializarHistorico();
+  inicializarContas();
   inicializarPainel();
   return iniciarSessao();
 }

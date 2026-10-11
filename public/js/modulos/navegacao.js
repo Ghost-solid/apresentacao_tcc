@@ -1,12 +1,14 @@
 import { appState } from './estado.js';
 import { $, $$ } from './utilitarios.js';
 import { carregarHistoricoAcoes } from './historico.js';
+import { carregarContasPendentes } from './contas.js';
 
-const nomesPaginas = { painel: 'Painel', leitores: 'Leitores', biblioteca: 'Estoque', emprestimos: 'Empréstimos', reservas: 'Reservas', relatorios: 'Relatórios', backup: 'Backup', historicoAcoes: 'Histórico de ações' };
+const nomesPaginas = { painel: 'Painel', leitores: 'Leitores', biblioteca: 'Estoque', emprestimos: 'Empréstimos', reservas: 'Reservas', relatorios: 'Relatórios', backup: 'Backup', historicoAcoes: 'Histórico de ações', contas: 'Contas pendentes' };
 export function abrirPagina(pagina) {
-  if (pagina === 'historicoAcoes') {
+  if (pagina === 'historicoAcoes' || pagina === 'contas') {
     if (appState.usuarioAtual?.perfil !== 'Diretor') return;
-    carregarHistoricoAcoes(1);
+    if (pagina === 'historicoAcoes') carregarHistoricoAcoes(1);
+    else carregarContasPendentes();
   }
   $$('.pagina').forEach(item => item.classList.remove('ativo'));
   $$('.item-navegacao').forEach(item => item.classList.toggle('ativo', item.dataset.pagina === pagina));

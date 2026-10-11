@@ -5,12 +5,25 @@ CREATE TABLE IF NOT EXISTS app_users (
   password_hash TEXT NOT NULL,
   name VARCHAR(160) NOT NULL,
   role VARCHAR(30) NOT NULL CHECK (role IN ('Biblioteca', 'Diretor')),
-  active BOOLEAN NOT NULL DEFAULT TRUE,
+  active BOOLEAN NOT NULL DEFAULT FALSE,
+  approval_pending BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 ALTER TABLE app_users ADD COLUMN IF NOT EXISTS email VARCHAR(80);
+ALTER TABLE app_users ADD COLUMN IF NOT EXISTS approval_pending BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE app_users ALTER COLUMN active SET DEFAULT FALSE;
+-- Não altera o acesso das contas existentes. Uma solicitação pendente nunca pode estar ativa.
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'app_users'::regclass AND conname = 'app_users_pending_inactive'
+  ) THEN
+    ALTER TABLE app_users ADD CONSTRAINT app_users_pending_inactive
+      CHECK (NOT (approval_pending AND active));
+  END IF;
+END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_app_users_email ON app_users(LOWER(email)) WHERE email IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS app_sessions (

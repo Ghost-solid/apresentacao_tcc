@@ -55,6 +55,7 @@
       <label for="senha">Senha</label>
       <div class="caixa-senha"><input id="senha" name="senha" type="password" autocomplete="current-password" required><button type="button" id="mostrarSenha" aria-label="Mostrar senha">👁</button></div>
       <p class="erro-login" id="erroLogin" role="alert"></p>
+      <p class="texto-ajuda-cadastro" id="estadoCadastroContaLogin" role="status" aria-live="polite"></p>
       <button class="botao-principal" type="submit">Acessar</button>
       <button class="botao-cadastro" id="abrirCadastroConta" type="button">Criar uma conta</button>
       <div class="contas-teste"><strong>Acesso protegido pelo servidor</strong><span>Use as credenciais fornecidas pela administração da biblioteca.</span><span>Os acessos iniciais podem ser configurados no arquivo <code>.env</code>.</span></div>
@@ -74,7 +75,7 @@
   <dialog id="janelaCadastroConta">
     <form method="dialog" id="formularioCadastroConta">
       <div class="titulo-modal"><h2>Criar conta</h2><button type="button" data-fechar-dialog aria-label="Fechar">×</button></div>
-      <p class="texto-ajuda-cadastro">A nova conta terá acesso de Biblioteca. Funções de Diretoria continuam restritas.</p>
+      <p class="texto-ajuda-cadastro">O cadastro ficará inativo até a direção aprovar. Após a aprovação, a conta terá acesso de Biblioteca.</p>
       <label for="nomeCadastroConta">Nome completo</label>
       <input id="nomeCadastroConta" type="text" autocomplete="name" minlength="3" maxlength="160" placeholder="Ex.: Maria José da Silva" required>
       <label for="emailCadastroConta">E-mail</label>
@@ -85,7 +86,7 @@
       <label for="confirmacaoSenhaCadastroConta">Confirmar senha</label>
       <input id="confirmacaoSenhaCadastroConta" type="password" autocomplete="new-password" minlength="8" maxlength="200" required>
       <p class="erro-login" id="erroCadastroConta" role="alert"></p>
-      <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button type="submit" class="botao-principal" id="salvarCadastroConta">Criar e entrar</button></div>
+      <div class="acoes-modal"><button type="button" data-fechar-dialog class="botao-cancelar">Cancelar</button><button type="submit" class="botao-principal" id="salvarCadastroConta">Solicitar cadastro</button></div>
     </form>
   </dialog>
 
@@ -101,6 +102,7 @@
         <button class="item-navegacao somente-diretor" data-pagina="relatorios"><span class="icone-navegacao" aria-hidden="true">▤</span><span>Relatórios</span></button>
         <button class="item-navegacao" data-pagina="backup"><span class="icone-navegacao" aria-hidden="true">↓</span><span>Backup</span></button>
         <button class="item-navegacao somente-diretor" data-pagina="historicoAcoes"><span class="icone-navegacao" aria-hidden="true">◷</span><span>Histórico de ações</span></button>
+        <button class="item-navegacao somente-diretor" data-pagina="contas"><span class="icone-navegacao" aria-hidden="true">♙</span><span>Contas pendentes</span></button>
       </nav>
       <div class="usuario-logado"><div class="circulo-usuario" id="inicialUsuario">U</div><div><strong id="nomeUsuario">Usuário</strong><span id="perfilUsuario">Perfil</span></div></div>
       <button class="sair" id="botaoSair">↪ Sair</button>
@@ -164,6 +166,10 @@
         <div class="acoes-pagina"><div><h2>Histórico de ações</h2><p>Operações registradas a partir da ativação deste recurso. Horários exibidos no fuso deste computador.</p></div><button type="button" class="botao-principal" id="atualizarHistoricoAcoes">Atualizar</button></div>
         <div class="caixa"><p id="estadoHistoricoAcoes" role="status"></p><div class="rolagem-tabela"><table><thead><tr><th>Data e hora</th><th>Responsável</th><th>Ação</th><th>Registro</th><th>Detalhes</th></tr></thead><tbody id="linhasHistoricoAcoes"></tbody></table></div>
         <nav class="paginacao-leitores" aria-label="Paginas do historico"><button type="button" class="botao-pequeno" id="anteriorHistoricoAcoes" disabled>Anterior</button><span id="paginaHistoricoAcoes"></span><button type="button" class="botao-pequeno" id="proximaHistoricoAcoes" disabled>Próxima</button></nav></div>
+      </section>
+      <section class="pagina" id="contas">
+        <div class="acoes-pagina"><div><h2>Contas aguardando aprovação</h2><p>Somente a direção pode liberar o acesso à gestão da biblioteca.</p></div><button type="button" class="botao-principal" id="atualizarContasPendentes">Atualizar</button></div>
+        <div class="caixa"><p id="estadoContasPendentes" role="status" aria-live="polite"></p><div class="rolagem-tabela"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Solicitação</th><th>Ação</th></tr></thead><tbody id="linhasContasPendentes"></tbody></table></div></div>
       </section>
     </main>
   </div>
@@ -326,6 +332,6 @@
   </dialog>
 
   <div class="aviso-flutuante" id="aviso-flutuante" role="status"></div>
-  <script type="module" src="/js/interacao.js?v=20261010-1"></script>
+  <script type="module" src="/js/interacao.js?v=20261010-2"></script>
 </body>
 </html>

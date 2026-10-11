@@ -138,3 +138,62 @@ test('formulário de empréstimo valida a seleção e envia os IDs internos corr
   appState.reservas = [{ id: 1, bookId: livro.id, readerId: leitor.id, status: 'ativa' }];
   assert.equal(modulos['regras.js'].livroPossuiReservaAtiva(livro.id), true);
 });
+
+test('cadastro exibe a espera pela aprovação sem entrar no sistema nem carregar o estoque', async t => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const elementos = new Map();
+  for (const [, id] of html.matchAll(/\bid="([^"]+)"/g)) {
+    elementos.set(`#${id}`, {
+      value: '', textContent: '', disabled: false, eventos: {}, fechado: false,
+      addEventListener(tipo, callback) { (this.eventos[tipo] ||= []).push(callback); },
+      setCustomValidity(mensagem) { this.validade = mensagem; },
+      reportValidity: () => true,
+      close() { this.fechado = true; },
+      reset() {}, focus() {}
+    });
+  }
+  const elemento = seletor => {
+    assert.ok(elementos.has(seletor), `Seletor ausente no HTML: ${seletor}`);
+    return elementos.get(seletor);
+  };
+  const documentoOriginal = globalThis.document;
+  globalThis.document = { querySelector: elemento };
+  t.after(() => {
+    if (documentoOriginal === undefined) delete globalThis.document;
+    else globalThis.document = documentoOriginal;
+  });
+  const { appState, eventos } = modulos['estado.js'];
+  const usuarioOriginal = appState.usuarioAtual;
+  appState.usuarioAtual = null;
+  t.after(() => { appState.usuarioAtual = usuarioOriginal; });
+  let renderizacoes = 0;
+  const contar = () => renderizacoes++;
+  eventos.addEventListener('dados-atualizados', contar);
+  t.after(() => eventos.removeEventListener('dados-atualizados', contar));
+  elemento('#nomeCadastroConta').value = 'Maria Da Silva';
+  elemento('#emailCadastroConta').value = 'MARIA@escola.com';
+  elemento('#senhaCadastroConta').value = 'SenhaForte123';
+  elemento('#confirmacaoSenhaCadastroConta').value = 'SenhaForte123';
+  elemento('#salvarCadastroConta').textContent = 'Solicitar cadastro';
+  elemento('#senha').value = 'senha anterior';
+  let pedidos = 0;
+  const message = 'Cadastro recebido. Aguarde a aprovação da direção para entrar no sistema.';
+  t.mock.method(globalThis, 'fetch', async (url, opcoes) => {
+    pedidos++;
+    assert.equal(url, '/api/auth/register');
+    assert.equal(opcoes.method, 'POST');
+    assert.deepEqual(Object.keys(JSON.parse(opcoes.body)).sort(), ['email', 'name', 'password']);
+    return Response.json({ status: 'pending', message }, { status: 201 });
+  });
+  modulos['autenticacao.js'].inicializarAutenticacao();
+  for (const callback of elemento('#formularioCadastroConta').eventos.submit) await callback({ preventDefault() {} });
+  assert.equal(pedidos, 1);
+  assert.equal(renderizacoes, 0);
+  assert.equal(appState.usuarioAtual, null);
+  assert.equal(elemento('#estadoCadastroContaLogin').textContent, message);
+  assert.equal(elemento('#usuario').value, 'maria@escola.com');
+  assert.equal(elemento('#senha').value, '');
+  assert.equal(elemento('#janelaCadastroConta').fechado, true);
+  assert.equal(elemento('#salvarCadastroConta').disabled, false);
+  assert.equal(elemento('#salvarCadastroConta').textContent, 'Solicitar cadastro');
+});

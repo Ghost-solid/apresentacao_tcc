@@ -27,11 +27,13 @@ test('modo de demonstração cria uma conta utilizável sem PostgreSQL externo',
   assert.equal(demoMode, true);
   await initializeDatabase();
   const { rows } = await pool.query(
-    'SELECT username, password_hash, role FROM app_users WHERE username = $1',
+    'SELECT username, password_hash, role, active, approval_pending FROM app_users WHERE username = $1',
     ['biblioteca']
   );
   assert.equal(rows[0].username, 'biblioteca');
   assert.equal(rows[0].role, 'Biblioteca');
+  assert.equal(rows[0].active, true);
+  assert.equal(rows[0].approval_pending, false);
   assert.equal(await bcrypt.compare('Biblioteca@123', rows[0].password_hash), true);
 });
 
