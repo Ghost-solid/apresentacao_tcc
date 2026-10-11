@@ -6,6 +6,7 @@ const { PGlite } = require('@electric-sql/pglite');
 const bcrypt = require('bcryptjs');
 
 let postgres;
+let dataReferencia;
 
 const connection = {
   async query(sql, parameters = []) {
@@ -47,6 +48,8 @@ before(async () => {
   postgres = new PGlite();
   const schema = fs.readFileSync(path.join(__dirname, '..', 'database', 'schema.sql'), 'utf8');
   await postgres.exec(schema);
+  // As devoluções usam CURRENT_DATE do banco, que pode diferir do dia UTC.
+  dataReferencia = (await connection.query('SELECT CURRENT_DATE::TEXT AS today')).rows[0].today;
   await connection.query(
     `INSERT INTO app_users (username, password_hash, name, role)
      VALUES ($1, $2, $3, $4)`,
@@ -66,7 +69,7 @@ after(async () => {
 });
 
 function isoDate(offset = 0) {
-  const value = new Date();
+  const value = new Date(`${dataReferencia}T12:00:00Z`);
   value.setUTCDate(value.getUTCDate() + offset);
   return value.toISOString().slice(0, 10);
 }

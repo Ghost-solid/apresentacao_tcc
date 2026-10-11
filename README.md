@@ -136,6 +136,13 @@ apresentacao_tcc/
 └── server.js  # API e servidor web
 ```
 
+O JavaScript da interface está em `public/js/`. O `interacao.js` apenas inicializa
+a aplicação e coordena as atualizações das telas. A pasta `modulos/` agrupa o
+restante por responsabilidade: autenticação, leitores, estoque, circulação
+(empréstimos, reservas e devoluções), exclusão, backup, histórico e painel.
+Os módulos de API, estado, regras, interface e utilitários compartilham o que
+essas funcionalidades precisam. São módulos nativos, sem etapa de compilação.
+
 ## Segurança e backup
 
 - Senhas são guardadas com hash bcrypt, nunca em texto puro.

@@ -335,7 +335,9 @@ app.use('/css', express.static(path.join(publicDirectory, 'css'), {
 app.use('/js', express.static(path.join(publicDirectory, 'js'), {
   index: false,
   dotfiles: 'deny',
-  maxAge: production ? '7d' : 0
+  // Os módulos importados não usam a versão da URL do arquivo principal.
+  // Revalidar evita combinar código antigo com uma nova implantação.
+  maxAge: 0
 }));
 app.use('/fonts/inter', express.static(path.join(root, 'node_modules', '@fontsource', 'inter', 'files'), {
   index: false,

@@ -13,6 +13,15 @@ const { pool } = require('../src/database');
 let server;
 let baseUrl;
 
+function lerCodigoInterface() {
+  const diretorio = path.join(__dirname, '..', 'public', 'js');
+  return [
+    fs.readFileSync(path.join(diretorio, 'interacao.js'), 'utf8'),
+    ...fs.readdirSync(path.join(diretorio, 'modulos')).filter(nome => nome.endsWith('.js'))
+      .map(nome => fs.readFileSync(path.join(diretorio, 'modulos', nome), 'utf8'))
+  ].join('\n');
+}
+
 before(async () => {
   await new Promise(resolve => {
     server = app.listen(0, '127.0.0.1', () => {
@@ -48,15 +57,36 @@ test('arquivos internos do servidor não ficam públicos', async () => {
   assert.equal(response.status, 404);
 });
 
+test('interface carrega todos os módulos JavaScript pelo servidor', async () => {
+  const html = await (await fetch(`${baseUrl}/`)).text();
+  assert.match(html, /<script type="module" src="\/js\/interacao\.js\?/);
+  const visitados = new Set();
+  async function verificarModulo(endereco) {
+    if (visitados.has(endereco)) return;
+    visitados.add(endereco);
+    const resposta = await fetch(endereco);
+    assert.equal(resposta.status, 200, endereco);
+    assert.match(resposta.headers.get('content-type') || '', /javascript/);
+    assert.match(resposta.headers.get('cache-control') || '', /max-age=0/);
+    const codigo = await resposta.text();
+    for (const [, relativo] of codigo.matchAll(/from\s+['"]([^'"]+)['"]/g)) {
+      await verificarModulo(new URL(relativo, endereco).href);
+    }
+  }
+  await verificarModulo(`${baseUrl}/js/interacao.js`);
+  const modulos = fs.readdirSync(path.join(__dirname, '..', 'public', 'js', 'modulos'));
+  assert.equal(visitados.size, modulos.filter(nome => nome.endsWith('.js')).length + 1);
+});
+
 test('interface usa a API e mantém localStorage apenas para marcar a migração', () => {
-  const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'interacao.js'), 'utf8');
+  const source = lerCodigoInterface();
   assert.match(source, /requisitarApi\('\/api\/state'/);
   assert.doesNotMatch(source, /localStorage\.setItem\('ds_(readers|library|loans|reservations)'/);
 });
 
 test('formulários usam seletores pesquisáveis únicos e podem ser cancelados vazios', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
-  const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'interacao.js'), 'utf8');
+  const source = lerCodigoInterface();
   for (const id of ['leitorEmprestimo', 'livroEmprestimo', 'livroReserva', 'leitorReserva']) {
     assert.match(html, new RegExp(`<input id="${id}"[^>]+list="[^"]+"`));
     assert.doesNotMatch(html, new RegExp(`<select id="${id}"`));
@@ -74,7 +104,7 @@ test('formulários usam seletores pesquisáveis únicos e podem ser cancelados v
 
 test('Estoque permite escolher cada campo da pesquisa', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
-  const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'interacao.js'), 'utf8');
+  const source = lerCodigoInterface();
   assert.match(html, /<select id="campoPesquisaBiblioteca"/);
   for (const campo of ['todos', 'id', 'titulo', 'autor', 'editora', 'categoria', 'isbn', 'ano', 'local', 'total', 'disponiveis', 'perdidos', 'estado']) {
     assert.match(html, new RegExp(`<option value="${campo}">`));
@@ -96,7 +126,7 @@ test('login tem animações temáticas com alternativa de movimento reduzido', (
 
 test('interface permite alternar entre modo claro e escuro', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
-  const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'interacao.js'), 'utf8');
+  const source = lerCodigoInterface();
   const styles = fs.readFileSync(path.join(__dirname, '..', 'public', 'css', 'apresentacao.css'), 'utf8');
   assert.match(html, /data-theme-toggle/);
   assert.match(source, /const chaveTema = 'ds_theme'/);
@@ -106,7 +136,7 @@ test('interface permite alternar entre modo claro e escuro', () => {
 
 test('tela de entrada permite criar uma conta de Biblioteca com campos validados', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
-  const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'interacao.js'), 'utf8');
+  const source = lerCodigoInterface();
   assert.match(html, /id="abrirCadastroConta"/);
   assert.match(html, /id="nomeCadastroConta"[^>]+required/);
   assert.match(html, /id="emailCadastroConta" type="email"[^>]+required/);
